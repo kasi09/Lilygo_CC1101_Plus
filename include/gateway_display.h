@@ -1,5 +1,7 @@
 #pragma once
 #include <TFT_eSPI.h>
+#include <ArduinoJson.h>
+#include "setup_qr.h"
 #include "board_telemetry.h"
 #include "remote_store.h"
 #include "device_features.h"
@@ -42,9 +44,12 @@ public:
   explicit GatewayDisplay(TFT_eSPI& screen) : screen_(screen), frame_(&screen) {}
   bool begin();
   void draw(const DisplaySnapshot& snapshot);
+  void diagnostics(JsonObject output);
+  void setupQrInfo(JsonObject output);
   static const char* resultText(const char* action, const char* error);
 private:
   TFT_eSPI& screen_;
   TFT_eSprite frame_;
+  SetupQr setupQr_;
   bool buffered_ = false;
 };

@@ -1,5 +1,25 @@
 # USB- und MQTT-Protokoll v0.5
 
+Firmware 0.5.1 ergänzt den lokal berechneten WLAN-QR-Code auf dem Display.
+`{"action":"display_info"}` liefert ausschließlich über USB die logische
+Displaygröße, Panelgröße, Rotation, ST7789-Offsets, Puffergröße und
+`right_edge_in_view`, `right_header_drawn` sowie `qr_ready`. Die Angaben enthalten
+keine Zugangsdaten. `right_header_drawn` prüft Textpixel im rechten Bildpuffer.
+Für die Plus-Variante: Panel 170×320, Querformat 320×170, Rotation 3,
+Offset x=0/y=35, Bildpuffer und Zeichenbereich jeweils 320×170.
+
+Zur lokalen QR-Diagnose kann `setup_info` optional `"qr":true` enthalten.
+Die zusätzlichen Felder `qr_modules` und `qr_hex` beschreiben den zuletzt
+gezeichneten WLAN-QR-Code, sofern die Einrichtungsseite bereits gerendert wurde.
+`qr_hex` ist das hexadezimale Nayuki-Format: erstes Byte ist die Modulanzahl,
+danach Modulbits zeilenweise, jeweils niederwertigstes Bit zuerst.
+`qr_render_ok` prüft bei vorhandenem Bildpuffer alle 123×123 Pixel einschließlich
+des weißen Randes gegen den QR-Inhalt. Das prüft die Grafik im Speicher, nicht
+die physische Anzeige des Panels.
+Diese Ausgabe enthält wie das Hotspot-Passwort temporäre Zugangsdaten und darf
+nicht veröffentlicht werden. QR-Daten werden weder über MQTT noch im normalen
+Status ausgegeben. Die Diagnosebefehle werden über MQTT mit `usb_only` abgelehnt.
+
 Firmware 0.5.0 ergänzt einen passwortgeschützten Einrichtungs-Hotspot und
 dauerhafte WLAN-/MQTT-Einstellungen. Neue Statusfelder:
 

@@ -502,8 +502,13 @@ void parseCommand(const char* payload, size_t size, bool fromMqtt) {
   if (!validRequestId) { result("parse", "invalid_request_id"); return; }
   commandRequestId = requestId;
   const char* action = doc["action"] | "";
-  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info")) {
+  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info") || !strcmp(action, "display_info")) {
     if (fromMqtt) { result(action, "usb_only"); }
+    else if (!strcmp(action, "display_info")) {
+      JsonDocument info; auto details = info.to<JsonObject>();
+      details["event"] = "display_info"; display.diagnostics(details);
+      serializeJson(info, Serial); Serial.println();
+    }
     else if (!strcmp(action, "network_setup")) {
       const bool busy = learning || features.ir.learning() || rf.mode() == RadioGateway::Mode::Scan;
       if (!doc["enabled"].isUnbound() && !doc["enabled"].is<bool>()) result(action, "invalid_enabled");
@@ -523,6 +528,7 @@ void parseCommand(const char* payload, size_t size, bool fromMqtt) {
       if (connectivity.portalActive()) {
         info["ssid"] = connectivity.portalSsid(); info["password"] = connectivity.portalPassword();
         info["url"] = "http://192.168.4.1/";
+        if (doc["qr"].is<bool>() && doc["qr"].as<bool>()) display.setupQrInfo(info.as<JsonObject>());
       }
       serializeJson(info, Serial); Serial.println();
     }
@@ -816,13 +822,14 @@ void setup() {
   serialLine.reserve(4096);
   for (int pin : {Pins::EncoderA, Pins::EncoderB, Pins::EncoderKey, Pins::UserKey}) pinMode(pin, INPUT_PULLUP);
   const bool radioReady = rf.begin();
-  screen.init(); screen.setRotation(1);
-  pinMode(Pins::Backlight, OUTPUT); digitalWrite(Pins::Backlight, HIGH);
-  display.begin();
   board.begin(); board.tick();
   previewScan(scanPreset);
   storeReady = store.begin();
   features.begin(featureEvent);
+  // Initialize the panel after the other shared SPI clients; GatewayDisplay sets its geometry.
+  pinMode(Pins::Backlight, OUTPUT); digitalWrite(Pins::Backlight, LOW);
+  screen.init(); display.begin(); screen.fillScreen(TFT_BLACK);
+  digitalWrite(Pins::Backlight, HIGH);
   mqtt.setCallback(mqttMessage);
   mqtt.setBufferSize(6144); mqtt.setSocketTimeout(1); mqtt.setKeepAlive(30);
   connectivity.begin([]() {

@@ -2,9 +2,9 @@
 import argparse
 import json
 import math
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 
 
 def arguments():
@@ -14,7 +14,7 @@ def arguments():
                         help="Listen duration after command; 0 = until Ctrl+C")
     parser.add_argument("--output", type=Path, help="Append received JSON to a JSONL file")
     sub = parser.add_subparsers(dest="action", required=True)
-    for action in ("watch", "status", "list", "stop", "ir-list", "backup", "probe-features", "nrf-scan", "setup-info"):
+    for action in ("watch", "status", "list", "stop", "ir-list", "backup", "probe-features", "nrf-scan", "setup-info", "display-info"):
         sub.add_parser(action)
     setup = sub.add_parser("network-setup", help="Open or close the local setup hotspot")
     setup.add_argument("--state", choices=("on", "off"), default="on")
@@ -153,7 +153,8 @@ def main():
                         except ValueError:
                             continue
                         if output:
-                            output.write(json.dumps(response, ensure_ascii=False) + "\n"); output.flush()
+                            output.write(json.dumps(response, ensure_ascii=False) + "\n")
+                            output.flush()
                         if isinstance(response, dict) and response.get("event") == "result" and response.get("action") == item["action"]:
                             if response.get("ok") is not True:
                                 raise ValueError(f"restore stopped at {item['action']} slot {item['slot']}: {response.get('error')}")

@@ -23,6 +23,11 @@ namespace {
 constexpr uint16_t Background = 0x0843, Panel = 0x10C6, Border = 0x294A;
 constexpr uint16_t Ink = 0xEF7D, Muted = 0x94B4, Accent = 0x4DDF;
 constexpr uint16_t Green = 0x4E91, Amber = 0xFD68, Red = 0xF289;
+constexpr int DisplayWidth = 320, DisplayHeight = 170, QrX = 8, QrY = 28;
+constexpr uint8_t DisplayRotation = 3; // Manufacturer's landscape orientation.
+static_assert(TFT_WIDTH == 170 && TFT_HEIGHT == 320, "ST7789 panel geometry must match the Plus board");
+static_assert(28 + SetupQr::Pixels <= 156, "QR including its quiet zone must fit above the footer");
+static_assert(8 + SetupQr::Pixels < 143, "QR and connection details must not overlap");
 constexpr const char* PageTitles[] = {"EMPFANG", "GESPEICHERTE CODES", "FERNBEDIENUNG LERNEN", "FUNK-SCANNER", "EINGAENGE", "INFRAROT", "BEDIENUNG", "GERAETEWERTE", "WLAN / MQTT EINRICHTEN"};
 constexpr const char* Presets[] = {"433 MHz", "868 MHz", "Alle Bereiche"};
 constexpr const char* Controls[] = {"Signalton abspielen", "RGB Ring umschalten", "Mikrofonpegel umschalten",
@@ -64,7 +69,7 @@ void button(Surface& c, const String& label, bool enabled = true) {
   c.setTextDatum(MC_DATUM); c.drawString(label, 160, 126); c.setTextDatum(TL_DATUM);
 }
 template <class Surface>
-void render(Surface& c, const DisplaySnapshot& s) {
+void render(Surface& c, const DisplaySnapshot& s, const SetupQr& qr) {
   const auto page = s.learning ? DisplayPage::Learn : s.scanning ? DisplayPage::Scan : s.features.irLearning ? DisplayPage::Infrared : s.page;
   c.fillScreen(Background);
   c.fillRect(0, 0, 320, 19, Panel);
@@ -73,6 +78,28 @@ void render(Surface& c, const DisplaySnapshot& s) {
   text(c, "MQTT", 274, 5, s.mqtt ? Green : Muted, 1, 31);
   c.fillCircle(212, 8, 2, s.setupActive ? Amber : s.wifi ? Green : Red);
   c.fillCircle(267, 8, 2, s.mqtt ? Green : Red);
+  if (page == DisplayPage::Network && s.setupActive) {
+    // This page owns the entire body: no notice or button may paint over the QR border.
+    if (qr.valid()) {
+      c.fillRect(QrX, QrY, SetupQr::Pixels, SetupQr::Pixels, TFT_WHITE);
+      for (int y = 0; y < SetupQr::Modules; ++y)
+        for (int x = 0; x < SetupQr::Modules; ++x)
+          if (qr.module(x, y)) c.fillRect(QrX + (x + SetupQr::Quiet) * SetupQr::Scale,
+            QrY + (y + SetupQr::Quiet) * SetupQr::Scale, SetupQr::Scale, SetupQr::Scale, TFT_BLACK);
+    } else text(c, "QR nicht verfuegbar", 8, 70, Amber, 1, 123);
+    text(c, "WLAN einrichten", 143, 25, Accent, 2, 169);
+    text(c, "HOTSPOT", 143, 46, Muted, 1, 169);
+    text(c, s.setupSsid, 143, 58, Ink, 1, 169);
+    text(c, "PASSWORT", 143, 76, Muted, 1, 169);
+    text(c, s.setupPassword, 143, 87, Ink, 2, 169);
+    text(c, "Danach im Browser:", 143, 112, Muted, 1, 169);
+    text(c, "192.168.4.1", 143, 123, Ink, 1, 169);
+    c.fillRoundRect(143, 138, 169, 15, 3, Accent);
+    text(c, "Klick: schliessen", 155, 142, Background, 1, 151);
+    c.fillRect(0, 156, DisplayWidth, 14, Panel);
+    text(c, "QR: WLAN verbinden | Seite: weiter", 8, 159, Muted, 1, 304);
+    return;
+  }
   text(c, PageTitles[unsigned(page)], 8, 23, Ink, 2, 266);
   text(c, String(unsigned(page) + 1) + "/" + unsigned(DisplayPage::Count), 288, 28, Muted, 1, 25);
 
@@ -231,21 +258,11 @@ void render(Surface& c, const DisplaySnapshot& s) {
       break;
     }
     case DisplayPage::Network: {
-      if (s.setupActive) {
-        text(c, "MIT DIESEM HOTSPOT VERBINDEN", 8, 46, Muted, 1);
-        text(c, s.setupSsid, 8, 60, Accent, 2);
-        text(c, "Passwort:", 8, 86, Muted, 1, 77);
-        text(c, s.setupPassword, 91, 81, Ink, 2, 221);
-        text(c, "Browser: http://192.168.4.1", 8, 106, Ink, 1);
-        button(c, "KLICK: HOTSPOT SCHLIESSEN");
-        footer = "Seite: weiter | Hotspot ohne Internet";
-      } else {
-        text(c, s.wifi ? "WLAN verbunden" : "WLAN nicht verbunden", 8, 49, s.wifi ? Green : Amber, 2);
-        text(c, s.networkIp.length() ? String("IP: ") + s.networkIp : "USB und Funk bleiben nutzbar", 8, 74, Ink, 1);
-        text(c, s.mqtt ? "MQTT verbunden" : "WLAN/MQTT hier neu einrichten", 8, 94, Muted, 1);
-        button(c, "DRUECKEN: EINRICHTUNGS-HOTSPOT STARTEN");
-        footer = "Seite: weiter | Zugangsdaten im Browser";
-      }
+      text(c, s.wifi ? "WLAN verbunden" : "WLAN nicht verbunden", 8, 49, s.wifi ? Green : Amber, 2);
+      text(c, s.networkIp.length() ? String("IP: ") + s.networkIp : "USB und Funk bleiben nutzbar", 8, 74, Ink, 1);
+      text(c, s.mqtt ? "MQTT verbunden" : "WLAN/MQTT hier neu einrichten", 8, 94, Muted, 1);
+      button(c, "DRUECKEN: EINRICHTUNGS-HOTSPOT STARTEN");
+      footer = "Seite: weiter | Zugangsdaten im Browser";
       break;
     }
     default: break;
@@ -258,17 +275,65 @@ void render(Surface& c, const DisplaySnapshot& s) {
 }
 
 bool GatewayDisplay::begin() {
+  screen_.setRotation(DisplayRotation);
+  screen_.resetViewport();
+  screen_.setTextWrap(false, false);
   frame_.setColorDepth(16);
-  buffered_ = frame_.createSprite(320, 170) != nullptr;
+  buffered_ = frame_.createSprite(screen_.width(), screen_.height()) != nullptr;
   if (!buffered_) {
     frame_.setColorDepth(8);
-    buffered_ = frame_.createSprite(320, 170) != nullptr;
+    buffered_ = frame_.createSprite(screen_.width(), screen_.height()) != nullptr;
   }
+  frame_.resetViewport();
+  frame_.setTextWrap(false, false);
   return buffered_;
 }
 void GatewayDisplay::draw(const DisplaySnapshot& snapshot) {
-  if (buffered_) { render(frame_, snapshot); frame_.pushSprite(0, 0); }
-  else render(screen_, snapshot);
+  // Restore the whole logical panel before each transfer, including the right edge.
+  screen_.resetViewport();
+  if (snapshot.page == DisplayPage::Network && snapshot.setupActive)
+    setupQr_.update(snapshot.setupSsid, snapshot.setupPassword);
+  else setupQr_.update("", "");
+  if (buffered_) {
+    frame_.resetViewport(); render(frame_, snapshot, setupQr_); frame_.pushSprite(0, 0);
+  } else render(screen_, snapshot, setupQr_);
+}
+void GatewayDisplay::diagnostics(JsonObject output) {
+  setup_t setup; screen_.getSetup(setup);
+  output["driver"] = setup.tft_driver;
+  output["panel_width"] = setup.tft_width; output["panel_height"] = setup.tft_height;
+  output["width"] = screen_.width(); output["height"] = screen_.height();
+  output["rotation"] = screen_.getRotation();
+  output["offset_x"] = setup.r0_x_offset; output["offset_y"] = setup.r0_y_offset;
+  output["viewport_width"] = screen_.getViewportWidth();
+  output["viewport_height"] = screen_.getViewportHeight();
+  output["buffered"] = buffered_;
+  output["frame_width"] = frame_.width(); output["frame_height"] = frame_.height();
+  output["right_edge_in_view"] = screen_.checkViewport(DisplayWidth - 1, DisplayHeight - 1, 1, 1)
+    && (!buffered_ || frame_.checkViewport(DisplayWidth - 1, DisplayHeight - 1, 1, 1));
+  bool rightHeaderDrawn = false;
+  if (buffered_)
+    for (int y = 5; y < 13; ++y)
+      for (int x = 274; x < 298; ++x)
+        if (frame_.readPixel(x, y) != frame_.readPixel(270, 1)) rightHeaderDrawn = true;
+  output["right_header_drawn"] = rightHeaderDrawn;
+  output["qr_ready"] = setupQr_.valid();
+}
+void GatewayDisplay::setupQrInfo(JsonObject output) {
+  // Deliberate local USB export, with the same sensitivity as setup_info's password.
+  output["qr_modules"] = SetupQr::Modules;
+  output["qr_hex"] = setupQr_.hex();
+  bool rasterOk = buffered_ && setupQr_.valid();
+  if (rasterOk) {
+    for (int y = 0; y < SetupQr::Pixels && rasterOk; ++y)
+      for (int x = 0; x < SetupQr::Pixels; ++x) {
+        const int moduleX = x / SetupQr::Scale - SetupQr::Quiet;
+        const int moduleY = y / SetupQr::Scale - SetupQr::Quiet;
+        const uint16_t expected = setupQr_.module(moduleX, moduleY) ? TFT_BLACK : TFT_WHITE;
+        if (frame_.readPixel(QrX + x, QrY + y) != expected) { rasterOk = false; break; }
+      }
+  }
+  output["qr_render_ok"] = rasterOk;
 }
 const char* GatewayDisplay::resultText(const char* action, const char* error) {
   if (error) {

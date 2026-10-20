@@ -47,5 +47,5 @@ constexpr float DefaultFrequency = 433.92f;
 constexpr unsigned IrSlots = 8;
 constexpr unsigned IrRawPulses = 128;
 constexpr const char* DeviceName = "LILYGO T-Embed CC1101 Plus";
-constexpr const char* Version = "0.5.0";
+constexpr const char* Version = "0.5.1";
 }

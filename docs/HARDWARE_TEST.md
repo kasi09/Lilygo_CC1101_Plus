@@ -3,6 +3,45 @@
 Die vollständige Abnahme unten ist **noch offen**. Ein erfolgreicher Build
 bestätigt nur die Übersetzbarkeit des Quellcodes.
 
+## Display und WLAN-QR-Code, Firmware 0.5.1, 20.10.2026
+
+Firmware 0.5.1 wurde erfolgreich gebaut: statischer RAM 64.712 Bytes,
+Anwendung 1.151.949 Bytes, Firmware-Abbild 1.152.320 Bytes. Die 74 bisherigen
+Compilerprüfungen und drei neuen Display-Grenzprüfungen liefen erfolgreich.
+57 Home-Assistant-Tests, sechs USB-Werkzeugtests und Ruff bestanden ebenfalls.
+
+Die Display-Initialisierung folgt jetzt auf die anderen SPI-Teilnehmer und
+verwendet Rotation 3 aus dem Herstellerbeispiel. Der Bildpuffer übernimmt die
+logische Panelgröße; vor jedem Bild wird der vollständige Zeichenbereich
+wiederhergestellt. `display_info` macht Größe, Offset und rechten Zeichenrand
+über USB prüfbar. Das Layout bleibt für 320×170 Pixel ausgelegt.
+
+Die Einrichtungsseite zeigt einen lokal berechneten WLAN-QR-Code mit
+ganzzahligen Modulen und freiem weißen Rand. Name, Passwort und Browser-Adresse
+stehen daneben. Die QR-Bibliothek ist Nayuki 1.8.0 unter MIT-Lizenz. Nach
+Schließen oder Verlassen der Seite wird der QR-Puffer verworfen; beim erneuten
+Öffnen wird er mit dem neuen temporären Hotspot-Passwort neu berechnet.
+
+Nach erneutem Anschließen wurde 0.5.1 auf COM4 geflasht; Esptool bestätigte den
+Hash und startete die Anwendung per Watchdog. Der anschließende USB-Test bestand:
+
+- ST7789, Panel 170×320, Querformat 320×170, Rotation 3, Offset x=0/y=35.
+- Zeichenbereich und Bildpuffer 320×170; rechter unterer Pixel im Zeichenbereich
+  und Textpixel in der rechten Statusanzeige vorhanden.
+- WLAN-QR-Code mit unabhängigem ZXing-Decoder ausgelesen: Er enthält genau
+  den aktuellen temporären Hotspot und dessen Passwort.
+- Alle 15.129 Pixel der QR-Grafik im Bildpuffer einschließlich weißem Rand
+  stimmen mit dem erzeugten QR-Code überein.
+- Schließen entfernt QR-Puffer und Zugangsdaten-Ausgabe; erneutes Öffnen erzeugt
+  ein neues Passwort und einen dazu passenden, erneut decodierbaren QR-Code.
+- Zehn erfolgreiche Statusabfragen mit aktivem Hotspot, Codespeicher und
+  Netzwerkspeicher verfügbar, Funkfehler 0, NFC und Akkuwerte vorhanden,
+  keine Panics oder I²C-Fehler. Freier Heap: 258.524 Bytes.
+
+Die Pixelprüfung betrifft den Bildpuffer. Die physisch vollständige Anzeige und
+das Scannen mit einer Handykamera sind noch am Display zu bestätigen.
+Es wurden keine aktuellen QR-Codes oder Zugangsdaten ins Repository übernommen.
+
 ## Einrichtungs-Hotspot, Firmware 0.5.0, 20.10.2026
 
 Firmware 0.5.0 wurde erfolgreich gebaut und auf COM4 geflasht. Esptool bestätigte

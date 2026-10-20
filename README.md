@@ -11,17 +11,22 @@ Quellcode: [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_P
 Ein lokales Installations-ZIP lässt sich mit `python tools/package_hacs.py` bauen.
 Benötigt Home Assistant ab 2026.10.0 und Firmware ab 0.4.0 mit
 `GW_MQTT_DISCOVERY false` bzw. die Portal-Auswahl **Eigene Integration (HACS)**.
-Firmware **0.5.0** ergänzt einen Einrichtungs-Hotspot für WLAN und MQTT.
-Sie wurde am 20.10.2026 erfolgreich gebaut und auf COM4 geflasht.
-Die bisherigen 54 Compilerprüfungen und 20 neue Netzwerkprüfungen liefen mit durch.
+Firmware **0.5.1** ergänzt einen WLAN-QR-Code auf der Einrichtungsseite und
+gleicht Display-Ausrichtung, Zeichenfläche und Bildpuffer an das Plus-Panel an.
+Die Netzwerkfunktionen von 0.5.0 und die eigene Integration bleiben kompatibel.
+0.5.1 wurde am 20.10.2026 auf COM4 geflasht. Der Gerätetest bestätigte die
+vollständige logische Zeichenfläche und decodierte den WLAN-QR-Code erfolgreich.
+Die physische Display-Abnahme ist separat in [Hardwaretest](docs/HARDWARE_TEST.md)
+dokumentiert.
 
 ## WLAN und MQTT ohne erneutes Kompilieren einrichten
 
 1. Die Firmware einmal auf den LilyGO flashen. Ohne gespeicherte WLAN-Daten
    startet sofort ein geschützter Hotspot **LilyGO-Setup-…**.
-2. Hotspot-Name und zufälliges Passwort stehen auf der Displayseite
-   **WLAN / MQTT einrichten**. Mit Handy oder Laptop verbinden und die Verbindung
-   trotz Hinweis auf fehlenden Internetzugang beibehalten.
+2. Den **WLAN-QR-Code mit der Handykamera scannen** und den Beitritt bestätigen.
+   Hotspot-Name und zufälliges Passwort stehen daneben, falls eine manuelle
+   Verbindung nötig ist. Die Verbindung trotz Hinweis auf fehlenden
+   Internetzugang beibehalten.
 3. Die Einrichtungsseite öffnet sich häufig automatisch. Sonst im Browser
    **http://192.168.4.1/** öffnen.
 4. WLAN-Name, WLAN-Passwort sowie MQTT-Broker, Port und Zugangsdaten eintragen.
@@ -36,6 +41,11 @@ werden. Ein Klick bei geöffnetem Hotspot schließt ihn; dadurch bleibt er bei
 weiterhin fehlendem WLAN für den Rest dieses Starts geschlossen. Nach einer
 erfolgreichen WLAN-Verbindung ist die automatische Wiederherstellung wieder aktiv.
 Das Hotspot-Passwort wird bei jedem erneuten Öffnen neu erzeugt.
+Der QR-Code wird dabei ebenfalls neu erzeugt. Er enthält ausschließlich die
+temporären Hotspot-Zugangsdaten; die WLAN-/MQTT-Einstellungen folgen im Browser.
+Er wird direkt auf dem Gerät berechnet und enthält keine externen Links.
+Die schwarze Grafik hat drei Pixel pro Modul und einen weißen Rand von vier
+Modulen; Meldungen und Bedienelemente überdecken diesen Rand nicht.
 
 In **Weitere Einstellungen** lassen sich eine eindeutige Geräte-ID und die
 Home-Assistant-Anbindung wählen. Das Basistopic lautet `lilygo/GERÄTE-ID`,
@@ -62,6 +72,12 @@ python tools/gateway.py --port COM4 --seconds 2 network-setup --state off
 `setup-info` zeigt auf ausdrückliche lokale USB-Anfrage die temporären Hotspot-
 Zugangsdaten. Gespeicherte Heim-WLAN-/MQTT-Passwörter werden dabei nicht ausgegeben.
 Diese USB-Ausgabe nicht veröffentlichen.
+
+Mit `python tools/gateway.py --port COM4 --seconds 2 display-info` lassen sich
+Display-Geometrie, Bildpuffer und sichtbarer Zeichenbereich ohne Zugangsdaten
+prüfen. Für das Plus-Panel werden 320×170 im Querformat und ein
+ST7789-Zeilenoffset von 35 erwartet. Ob der physische Bildschirm an allen
+Seiten sichtbar ist, muss am Gerät kontrolliert werden.
 
 **Hardwareteststand: Version 0.3.1, Prototyp.** Die Firmware integriert die praktisch nutzbaren
 Boardfunktionen in ein gemeinsames Home-Assistant-Gerät. Beim Kompilieren werden
