@@ -1,0 +1,308 @@
+{
+  "title": "LILYGO T-Embed CC1101 Plus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add LilyGO",
+        "description": "Uses Home Assistant's existing MQTT broker. Requires firmware 0.4.0 or later with GW_MQTT_DISCOVERY false. Connection testing takes up to 25 seconds.",
+        "data": {
+          "name": "Device name",
+          "base_topic": "MQTT base topic",
+          "offline_setup": "Set up without connection test"
+        }
+      }
+    },
+    "error": {
+      "invalid_topic": "Use a topic without spaces, wildcards or empty levels, e.g. lilygo/lilygo_rf.",
+      "cannot_connect": "No live state received. Check Wi-Fi, MQTT and the base topic.",
+      "mqtt_unavailable": "Configure the MQTT integration first.",
+      "incompatible_firmware": "Install firmware 0.4.0 or later and set GW_MQTT_DISCOVERY false."
+    },
+    "abort": {
+      "already_configured": "This MQTT base topic is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_pct": {
+        "name": "Battery"
+      },
+      "battery_voltage_v": {
+        "name": "Battery voltage"
+      },
+      "battery_current_ma": {
+        "name": "Battery current"
+      },
+      "gauge_temperature_c": {
+        "name": "Gauge IC temperature"
+      },
+      "frequency_mhz": {
+        "name": "Receive frequency"
+      },
+      "rssi_dbm": {
+        "name": "Radio signal strength"
+      },
+      "wifi_rssi_dbm": {
+        "name": "Wi-Fi signal strength"
+      },
+      "rx_count": {
+        "name": "Received RF telegrams"
+      },
+      "tx_count": {
+        "name": "Transmitted RF commands"
+      },
+      "saved": {
+        "name": "Stored RF codes"
+      },
+      "mode": {
+        "name": "Operating mode"
+      },
+      "uptime_s": {
+        "name": "Uptime"
+      },
+      "free_heap_bytes": {
+        "name": "Free memory"
+      },
+      "charge_status": {
+        "name": "Charge status"
+      },
+      "noise_dbfs": {
+        "name": "Relative microphone level"
+      },
+      "nfc_count": {
+        "name": "NFC scans"
+      },
+      "ir_count": {
+        "name": "Received IR telegrams"
+      },
+      "nrf_count": {
+        "name": "Received nRF24 packets"
+      },
+      "nrf_event_dropped": {
+        "name": "Dropped nRF24 events"
+      },
+      "nrf_channel": {
+        "name": "nRF24 channel"
+      },
+      "sd_total_mb": {
+        "name": "SD capacity"
+      },
+      "sd_used_mb": {
+        "name": "SD used space"
+      },
+      "scan": {
+        "name": "Radio scan"
+      }
+    },
+    "binary_sensor": {
+      "usb_power": {
+        "name": "USB power"
+      },
+      "charging": {
+        "name": "Charging"
+      },
+      "storage_ok": {
+        "name": "Code storage ready"
+      },
+      "gauge_reachable": {
+        "name": "Battery gauge reachable"
+      },
+      "nfc_available": {
+        "name": "NFC available"
+      },
+      "ir_available": {
+        "name": "Infrared available"
+      },
+      "nrf_available": {
+        "name": "nRF24 available"
+      },
+      "sd_mounted": {
+        "name": "SD card mounted"
+      }
+    },
+    "switch": {
+      "nfc": {
+        "name": "NFC reader"
+      },
+      "ir": {
+        "name": "IR receiver"
+      },
+      "nrf": {
+        "name": "nRF24 receiver"
+      },
+      "microphone": {
+        "name": "Microphone level measurement"
+      },
+      "screen": {
+        "name": "Display"
+      }
+    },
+    "light": {
+      "rgb": {
+        "name": "RGB ring"
+      }
+    },
+    "button": {
+      "scan_433": {
+        "name": "Scan 433 MHz"
+      },
+      "scan_868": {
+        "name": "Scan 868 MHz"
+      },
+      "scan_all": {
+        "name": "Scan all CC1101 bands"
+      },
+      "stop": {
+        "name": "Stop learning / scan"
+      },
+      "beep": {
+        "name": "Beep"
+      },
+      "backup": {
+        "name": "Back up codes to SD"
+      },
+      "probe_features": {
+        "name": "Check hardware"
+      },
+      "nrf_scan": {
+        "name": "Scan 2.4 GHz activity"
+      },
+      "refresh": {
+        "name": "Refresh status and codes"
+      },
+      "send_slot": {
+        "name": "Send {kind} slot {slot}"
+      }
+    },
+    "event": {
+      "input": {
+        "name": "Buttons and encoder"
+      },
+      "radio": {
+        "name": "Radio and infrared"
+      },
+      "nfc_tag": {
+        "name": "NFC tags"
+      },
+      "operation": {
+        "name": "Gateway results"
+      }
+    }
+  },
+  "services": {
+    "learn_code": {
+      "name": "Learn a code",
+      "description": "Listen for 15 seconds; successful capture replaces the slot. IR: 0–7, RF: 0–15. Names: 32 UTF-8 bytes maximum.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "slot": {
+          "name": "Slot (IR 0–7, RF 0–15)"
+        },
+        "name": {
+          "name": "Code name"
+        },
+        "code_type": {
+          "name": "Learning mode"
+        }
+      }
+    },
+    "send_code": {
+      "name": "Send a code",
+      "description": "RF repeats: 1–10 (default 6); IR additional repeats: 0–3 (default 0). No target state feedback.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "kind": {
+          "name": "Radio type"
+        },
+        "slot": {
+          "name": "Slot (IR 0–7, RF 0–15)"
+        },
+        "repeats": {
+          "name": "Repeats (RF 1–10; IR 0–3)"
+        }
+      }
+    },
+    "delete_code": {
+      "name": "Delete a code",
+      "description": "Permanently erase one RF or IR slot.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "kind": {
+          "name": "Radio type"
+        },
+        "slot": {
+          "name": "Slot (IR 0–7, RF 0–15)"
+        }
+      }
+    },
+    "scan": {
+      "name": "Scan radio activity",
+      "description": "Choose a preset OR start, end and step in MHz. RSSI measurement.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "band": {
+          "name": "Band preset"
+        },
+        "start_mhz": {
+          "name": "Start (MHz)"
+        },
+        "end_mhz": {
+          "name": "End (MHz)"
+        },
+        "step_mhz": {
+          "name": "Step (MHz)"
+        }
+      }
+    },
+    "tune": {
+      "name": "Set receive frequency",
+      "description": "Receive bands: 300–348, 387–464 and 779–928 MHz.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "frequency_mhz": {
+          "name": "Frequency (MHz)"
+        }
+      }
+    },
+    "store_code": {
+      "name": "Store a known code",
+      "description": "Import one RC, RAW or IR record including its slot. Replaces the stored code.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "kind": {
+          "name": "Radio type"
+        },
+        "record": {
+          "name": "Code record"
+        }
+      }
+    },
+    "execute": {
+      "name": "Gateway command",
+      "description": "Advanced firmware action; session and request ID are added automatically.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO device"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "parameters": {
+          "name": "Parameters"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+pytest==8.4.2
+pytest-asyncio==1.2.0
+ruff==0.17.1
+# Home Assistant is additionally required for tests/test_ha.py (Linux CI).
+homeassistant==2026.10.0
+paho-mqtt==2.1.0

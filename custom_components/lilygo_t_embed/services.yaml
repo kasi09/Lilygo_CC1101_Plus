@@ -1,0 +1,163 @@
+learn_code:
+  name: Learn a code
+  description: Start a 15 second learning window. A successful capture replaces the selected slot.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+    name:
+      required: true
+      selector:
+        text:
+    code_type:
+      default: rc
+      selector:
+        select:
+          options: [rc, raw, ir]
+send_code:
+  name: Send a code
+  description: Transmit a stored RF or IR code once per invocation. RF repeats 1–10; IR additional repeats 0–3.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    kind:
+      default: rf
+      selector:
+        select:
+          options: [rf, ir]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+    repeats:
+      selector:
+        number:
+          min: 0
+          max: 10
+          mode: box
+delete_code:
+  name: Delete a code
+  description: Permanently erase one RF or IR slot on the LilyGO.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    kind:
+      default: rf
+      selector:
+        select:
+          options: [rf, ir]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+scan:
+  name: Scan radio activity
+  description: Choose a preset OR specify start, end and step in MHz. RSSI scanning has no IQ output or automatic protocol decoding.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    band:
+      selector:
+        select:
+          options: ['433', '868', all]
+    start_mhz:
+      selector:
+        number:
+          min: 300
+          max: 928
+          step: 0.025
+          mode: box
+          unit_of_measurement: MHz
+    end_mhz:
+      selector:
+        number:
+          min: 300
+          max: 928
+          step: 0.025
+          mode: box
+          unit_of_measurement: MHz
+    step_mhz:
+      selector:
+        number:
+          min: 0.025
+          max: 2
+          step: 0.025
+          mode: box
+          unit_of_measurement: MHz
+tune:
+  name: Set receive frequency
+  description: Tune within 300–348, 387–464 or 779–928 MHz. Transmission remains limited by firmware.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    frequency_mhz:
+      required: true
+      selector:
+        number:
+          min: 300
+          max: 928
+          step: 0.01
+          mode: box
+          unit_of_measurement: MHz
+store_code:
+  name: Store a known code
+  description: Import one RC, RAW or IR record from the documented USB/MQTT format. Replaces the selected slot.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    kind:
+      default: rf
+      selector:
+        select:
+          options: [rf, ir]
+    record:
+      required: true
+      selector:
+        object:
+execute:
+  name: Gateway command
+  description: Advanced firmware action, e.g. nrf_config, nrf_send, feature_set, backup, stop or list. Session and request ID are added automatically.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: lilygo_t_embed
+    action:
+      required: true
+      selector:
+        select:
+          options: [status, list, ir_list, stop, send, ir_send, learn, ir_learn, delete, ir_delete, store, ir_store, tune, scan, feature_set, screen_set, light_set, beep, backup, probe_features, nrf_config, nrf_send, nrf_scan]
+    parameters:
+      selector:
+        object:

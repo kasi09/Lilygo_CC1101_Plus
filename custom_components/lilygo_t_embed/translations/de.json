@@ -1,0 +1,308 @@
+{
+  "title": "LILYGO T-Embed CC1101 Plus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "LilyGO hinzufügen",
+        "description": "Verwendet den vorhandenen MQTT-Broker von Home Assistant. Benötigt Firmware ab 0.4.0 mit GW_MQTT_DISCOVERY false. Der Verbindungstest dauert bis zu 25 Sekunden.",
+        "data": {
+          "name": "Gerätename",
+          "base_topic": "MQTT-Basistopic",
+          "offline_setup": "Ohne Verbindungstest vorbereiten"
+        }
+      }
+    },
+    "error": {
+      "invalid_topic": "Topic ohne Leerzeichen, Platzhalter oder leere Ebenen angeben, z. B. lilygo/lilygo_rf.",
+      "cannot_connect": "Kein aktueller Gerätestatus empfangen. WLAN, MQTT und Basistopic prüfen.",
+      "mqtt_unavailable": "Zuerst die MQTT-Integration in Home Assistant einrichten.",
+      "incompatible_firmware": "Firmware ab 0.4.0 installieren und GW_MQTT_DISCOVERY false setzen."
+    },
+    "abort": {
+      "already_configured": "Dieses MQTT-Basistopic ist bereits eingerichtet."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_pct": {
+        "name": "Akku"
+      },
+      "battery_voltage_v": {
+        "name": "Akkuspannung"
+      },
+      "battery_current_ma": {
+        "name": "Akkustrom"
+      },
+      "gauge_temperature_c": {
+        "name": "Temperatur des Akku-ICs"
+      },
+      "frequency_mhz": {
+        "name": "Empfangsfrequenz"
+      },
+      "rssi_dbm": {
+        "name": "Funkpegel"
+      },
+      "wifi_rssi_dbm": {
+        "name": "WLAN-Signal"
+      },
+      "rx_count": {
+        "name": "Empfangene Funktelegramme"
+      },
+      "tx_count": {
+        "name": "Gesendete Funkbefehle"
+      },
+      "saved": {
+        "name": "Gespeicherte Funkcodes"
+      },
+      "mode": {
+        "name": "Betriebsmodus"
+      },
+      "uptime_s": {
+        "name": "Betriebszeit"
+      },
+      "free_heap_bytes": {
+        "name": "Freier Arbeitsspeicher"
+      },
+      "charge_status": {
+        "name": "Ladestatus"
+      },
+      "noise_dbfs": {
+        "name": "Relativer Mikrofonpegel"
+      },
+      "nfc_count": {
+        "name": "NFC-Erkennungen"
+      },
+      "ir_count": {
+        "name": "Empfangene IR-Telegramme"
+      },
+      "nrf_count": {
+        "name": "Empfangene nRF24-Pakete"
+      },
+      "nrf_event_dropped": {
+        "name": "Verworfene nRF24-Ereignisse"
+      },
+      "nrf_channel": {
+        "name": "nRF24-Kanal"
+      },
+      "sd_total_mb": {
+        "name": "SD-Kapazität"
+      },
+      "sd_used_mb": {
+        "name": "SD-Belegung"
+      },
+      "scan": {
+        "name": "Funkscan"
+      }
+    },
+    "binary_sensor": {
+      "usb_power": {
+        "name": "USB-Versorgung"
+      },
+      "charging": {
+        "name": "Akku lädt"
+      },
+      "storage_ok": {
+        "name": "Codespeicher bereit"
+      },
+      "gauge_reachable": {
+        "name": "Akku-IC erreichbar"
+      },
+      "nfc_available": {
+        "name": "NFC verfügbar"
+      },
+      "ir_available": {
+        "name": "Infrarot verfügbar"
+      },
+      "nrf_available": {
+        "name": "nRF24 verfügbar"
+      },
+      "sd_mounted": {
+        "name": "SD-Karte eingebunden"
+      }
+    },
+    "switch": {
+      "nfc": {
+        "name": "NFC-Leser"
+      },
+      "ir": {
+        "name": "IR-Empfänger"
+      },
+      "nrf": {
+        "name": "nRF24-Empfänger"
+      },
+      "microphone": {
+        "name": "Mikrofon-Pegelmessung"
+      },
+      "screen": {
+        "name": "Display"
+      }
+    },
+    "light": {
+      "rgb": {
+        "name": "RGB-Ring"
+      }
+    },
+    "button": {
+      "scan_433": {
+        "name": "433 MHz scannen"
+      },
+      "scan_868": {
+        "name": "868 MHz scannen"
+      },
+      "scan_all": {
+        "name": "Alle CC1101-Bereiche scannen"
+      },
+      "stop": {
+        "name": "Lernen / Scan stoppen"
+      },
+      "beep": {
+        "name": "Signalton"
+      },
+      "backup": {
+        "name": "Codes auf SD sichern"
+      },
+      "probe_features": {
+        "name": "Hardware prüfen"
+      },
+      "nrf_scan": {
+        "name": "2,4-GHz-Aktivität prüfen"
+      },
+      "refresh": {
+        "name": "Status und Codes aktualisieren"
+      },
+      "send_slot": {
+        "name": "{kind}-Platz {slot} senden"
+      }
+    },
+    "event": {
+      "input": {
+        "name": "Tasten und Drehgeber"
+      },
+      "radio": {
+        "name": "Funk und Infrarot"
+      },
+      "nfc_tag": {
+        "name": "NFC-Tags"
+      },
+      "operation": {
+        "name": "Gateway-Ergebnisse"
+      }
+    }
+  },
+  "services": {
+    "learn_code": {
+      "name": "Code anlernen",
+      "description": "15 Sekunden anlernen; erfolgreiche Aufnahme ersetzt den Platz. IR: 0–7, Funk: 0–15. Namen: höchstens 32 UTF-8-Bytes.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "slot": {
+          "name": "Speicherplatz (IR 0–7, Funk 0–15)"
+        },
+        "name": {
+          "name": "Codename"
+        },
+        "code_type": {
+          "name": "Lernmodus"
+        }
+      }
+    },
+    "send_code": {
+      "name": "Code senden",
+      "description": "Funkwiederholungen: 1–10 (Standard 6); zusätzliche IR-Wiederholungen: 0–3 (Standard 0). Keine Zustandsrückmeldung des Zielgeräts.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "kind": {
+          "name": "Funkart"
+        },
+        "slot": {
+          "name": "Speicherplatz (IR 0–7, Funk 0–15)"
+        },
+        "repeats": {
+          "name": "Wiederholungen (Funk 1–10; IR 0–3)"
+        }
+      }
+    },
+    "delete_code": {
+      "name": "Code löschen",
+      "description": "Einen Funk- oder IR-Speicherplatz dauerhaft löschen.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "kind": {
+          "name": "Funkart"
+        },
+        "slot": {
+          "name": "Speicherplatz (IR 0–7, Funk 0–15)"
+        }
+      }
+    },
+    "scan": {
+      "name": "Funkaktivität scannen",
+      "description": "Eine Vorgabe ODER Start, Ende und Schritt in MHz angeben. RSSI-Messung.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "band": {
+          "name": "Bereichsvorgabe"
+        },
+        "start_mhz": {
+          "name": "Start (MHz)"
+        },
+        "end_mhz": {
+          "name": "Ende (MHz)"
+        },
+        "step_mhz": {
+          "name": "Schritt (MHz)"
+        }
+      }
+    },
+    "tune": {
+      "name": "Empfangsfrequenz einstellen",
+      "description": "Empfangsbereiche: 300–348, 387–464 und 779–928 MHz.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "frequency_mhz": {
+          "name": "Frequenz (MHz)"
+        }
+      }
+    },
+    "store_code": {
+      "name": "Bekannten Code speichern",
+      "description": "Ein RC-, RAW- oder IR-Objekt einschließlich Speicherplatz importieren. Ersetzt den gespeicherten Code.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "kind": {
+          "name": "Funkart"
+        },
+        "record": {
+          "name": "Codeobjekt"
+        }
+      }
+    },
+    "execute": {
+      "name": "Gateway-Befehl",
+      "description": "Erweiterte Firmwareaktion; Session und Befehlskennung werden automatisch ergänzt.",
+      "fields": {
+        "device_id": {
+          "name": "LilyGO-Gerät"
+        },
+        "action": {
+          "name": "Aktion"
+        },
+        "parameters": {
+          "name": "Parameter"
+        }
+      }
+    }
+  }
+}

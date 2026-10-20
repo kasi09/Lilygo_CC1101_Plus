@@ -1,0 +1,18 @@
+{
+  "domain": "lilygo_t_embed",
+  "name": "LILYGO T-Embed CC1101 Plus",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/kasi09/Lilygo_CC1101_Plus/blob/main/docs/HACS.md",
+  "codeowners": [
+    "@kasi09"
+  ],
+  "dependencies": [
+    "mqtt",
+    "tag"
+  ],
+  "iot_class": "local_push",
+  "integration_type": "device",
+  "requirements": [],
+  "issue_tracker": "https://github.com/kasi09/Lilygo_CC1101_Plus/issues"
+}

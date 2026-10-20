@@ -1,0 +1,275 @@
+# LILYGO T-Embed CC1101 Plus – eigene Home-Assistant-Integration
+
+Lokale Custom Component **0.1.0**, Domain `lilygo_t_embed`, für Home Assistant
+**ab 2026.10.0** und Gateway-Firmware **ab 0.4.0**. Die Kommunikation läuft lokal
+über die bereits eingerichtete MQTT-Integration. In Home Assistant werden keine
+zweiten Broker-Zugangsdaten gespeichert.
+
+## Lokal installieren
+
+1. Das Paket `dist/lilygo_t_embed-0.1.0.zip` entpacken. Den enthaltenen Ordner
+   `custom_components/lilygo_t_embed` nach
+   `/config/custom_components/lilygo_t_embed` auf HAOS kopieren. Das Verzeichnis
+   darf nicht doppelt verschachtelt sein; dort muss direkt `manifest.json` liegen.
+2. Home Assistant neu starten. Unter **Einstellungen → Geräte & Dienste →
+   Integration hinzufügen** nach **LILYGO T-Embed CC1101 Plus** suchen.
+3. Gerätenamen und MQTT-Basistopic eintragen, standardmäßig `lilygo/lilygo_rf`.
+   Für jedes Board einen eigenen `GW_DEVICE_ID` und ein eigenes Basistopic nutzen.
+4. Der Verbindungstest wartet bis zu 25 Sekunden auf einen aktuellen Status.
+   Mit **Ohne Verbindungstest vorbereiten** lässt sich das Gerät vorher anlegen;
+   seine Entitäten bleiben bis zum Empfang passender Live-Daten nicht verfügbar.
+
+Der Quellcode liegt unter
+[kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_Plus).
+Die lokale Installation funktioniert ohne Repository-Zugriff. Für die
+Installation über HACS muss das Repository öffentlich zugänglich sein;
+private Repositories werden von HACS nicht unterstützt. Ein lokales ZIP kann
+dort nicht als Repository hinzugefügt werden.
+
+## Firmware vorbereiten
+
+Die zuvor geflashte Firmware 0.3.1 bleibt auf dem Gerät, bis erneut geflasht wird.
+Für diese Komponente die mitgelieferte **0.4.0** verwenden:
+
+```cpp
+// In include/config.local.h zusammen mit den eigenen WLAN-/MQTT-Zugangsdaten:
+#define GW_DEVICE_ID "lilygo_rf"
+#define GW_MQTT_DISCOVERY false
+```
+
+`config.example.h` setzt Discovery bereits auf `false`. Bestehende lokale
+Konfigurationen ohne diesen Schalter behalten zur Kompatibilität Discovery bei;
+deshalb den Schalter dort ausdrücklich ergänzen. Bauen und flashen wie in der
+Projekt-README beschrieben. Die Komponente meldet ältere Firmware oder aktive
+Discovery als inkompatibel. Bei Offline-Einrichtung bleiben dann alle Geräte-
+Entitäten nicht verfügbar.
+
+Beim Wechsel von bereits benutzter MQTT-Discovery zuerst deren altes Gerät und
+die zugehörigen retained Discovery-Konfigurationen im Broker entfernen. Das
+Abschalten verhindert neue Veröffentlichungen, löscht vorhandene Broker-Einträge
+aber nicht. Keine fremden `homeassistant/#`-Topics pauschal löschen. Wenn das
+Gerät bisher ohne MQTT betrieben wurde, entfällt dieser Migrationsschritt.
+
+## Entitäten und Bedienung
+
+| Bereich | Funktionen |
+| --- | --- |
+| Messwerte | Akku, Spannung, Strom, interne Akku-IC-Temperatur, Funk-/WLAN-Pegel, Frequenz, Zähler, Speicher, Betriebszeit, SD-Belegung, relativer Mikrofonpegel |
+| Zustand | USB-Versorgung, Laden, Codespeicher, Akku-IC, NFC, IR, nRF24, SD |
+| Schalter | Display, NFC-Leser, IR-Empfang, nRF24-Empfang, Mikrofon-Pegelmessung |
+| Licht | RGB-Ring, Helligkeit, Farbe, Effekte Statisch und Status |
+| Tasten | RSSI-Scans, Stoppen, Signalton, SD-Sicherung, Hardwareprüfung, Aktualisieren, 2,4-GHz-Aktivität |
+| Codeplätze | 16 Funk- und acht IR-Sendetasten; leere oder noch nicht geladene Plätze sind nicht verfügbar. Der Name steht im Attribut `code_name`. |
+| Ereignisse | Drehgeber/Tasten, Funk/IR/nRF24, NFC-Tags, Befehls- und Scanergebnisse |
+
+Die Chiptemperatur misst keinen Raumwert. Der Mikrofonpegel ist dBFS und kein
+kalibrierter Schalldruckpegel. Rohdaten des Mikrofons werden nicht übertragen.
+Fehlende oder laut Firmware veraltete Messwerte erscheinen nicht als Null.
+Nach 45 Sekunden ohne Status und sofort bei erkanntem MQTT-/Geräte-Ausfall wird
+das Gateway nicht verfügbar. Schalter und Licht verwenden gemeldete Zustände.
+Hardwarezustände und Funktionsschalter werden auf dem Board nicht automatisch
+über Neustarts hinweg wiederhergestellt.
+
+## Aktionen in Home Assistant
+
+Unter **Entwicklerwerkzeuge → Aktionen** stehen sieben eigene Aktionen mit
+deutschen Feldern zur Verfügung. `device_id` ist die Home-Assistant-Geräte-ID;
+in der grafischen Ansicht wird das LilyGO-Gerät ausgewählt.
+
+### Fernbedienung anlernen
+
+```yaml
+action: lilygo_t_embed.learn_code
+data:
+  device_id: DEINE_HA_GERAETE_ID
+  slot: 0
+  name: Steckdose AN
+  code_type: rc
+```
+
+Dann innerhalb von 15 Sekunden die Taste drücken. `code_type` ist `rc`, `raw`
+oder `ir`; IR verwendet Plätze 0–7, Funk Plätze 0–15. Erfolgreiches Lernen
+ersetzt den gewählten Platz. Eine Startbestätigung bedeutet nur, dass das
+Lernfenster geöffnet wurde. Erfolg bzw. Zeitüberschreitung erscheinen als
+Ereignis. Für Steckdosen AN und AUS getrennte Plätze anlernen.
+
+### Gespeicherten Code senden
+
+```yaml
+action: lilygo_t_embed.send_code
+data:
+  device_id: DEINE_HA_GERAETE_ID
+  kind: rf
+  slot: 0
+  repeats: 6
+```
+
+Alternativ die Sendetaste des Codeplatzes nutzen. Funk erlaubt 1–10
+Wiederholungen; IR erlaubt 0–3 zusätzliche Wiederholungen. Die Firmware begrenzt
+Sendedauer, Frequenzen und Abstände weiterhin. Eine Sendebestätigung bestätigt
+keinen tatsächlichen Schaltzustand der Steckdose.
+
+### Bekannten Code eintragen
+
+```yaml
+action: lilygo_t_embed.store_code
+data:
+  device_id: DEINE_HA_GERAETE_ID
+  kind: rf
+  record:
+    slot: 0
+    name: Steckdose AN
+    kind: rc
+    frequency_mhz: 433.92
+    code: '5393'
+    bits: 24
+    protocol: 1
+    pulse_us: 350
+```
+
+RAW- und IR-Objekte entsprechen dem Format in `docs/PROTOCOL.md`.
+`delete_code` löscht einen gewählten Platz dauerhaft. Codes werden auf dem
+LilyGO gespeichert; die Integration liest ihre Liste nach Verbindung und
+Änderungen neu ein. Mit der Taste **Status und Codes aktualisieren** erneut laden.
+
+### Frequenz und Scan
+
+```yaml
+action: lilygo_t_embed.scan
+data:
+  device_id: DEINE_HA_GERAETE_ID
+  band: '433'
+```
+
+`band` akzeptiert `433`, `868`, `all`. Alternativ alle drei Felder `start_mhz`,
+`end_mhz`, `step_mhz` angeben, ohne `band`. Mit `tune` und `frequency_mhz` wird
+die Empfangsfrequenz eingestellt. Der Scan-Sensor zeigt den letzten Messpunkt
+oder das Abschlussresultat. Die Integration speichert keine vollständigen
+Spektren. Der CC1101 liefert RSSI-Messungen und keine SDR-/IQ-Daten.
+
+### Weitere Boardfunktionen
+
+Die Aktion `execute` deckt die übrigen dokumentierten Firmwareaktionen ab,
+z. B. `nrf_config`, `nrf_send`, `feature_set`, `backup`, `stop`, `list`, `ir_list`.
+Das Feld `parameters` enthält nur deren Parameter. `session`, `request_id` und
+unbekannte Felder lassen sich darüber nicht einschleusen.
+
+```yaml
+action: lilygo_t_embed.execute
+data:
+  device_id: DEINE_HA_GERAETE_ID
+  action: nrf_config
+  parameters:
+    channel: 76
+    address_hex: E7E7E7E7E7
+```
+
+Die nRF24-Gegenstelle muss zu Kanal, Adresse und weiteren festgelegten
+Paketparametern passen. Das ist keine allgemeine Bluetooth-/WLAN-Decodierung.
+
+## Automationen
+
+Die Ereignisentitäten eignen sich für Zustandsauslöser. Für gezielte Filter
+wird außerdem `lilygo_t_embed_event` auf dem HA-Ereignisbus veröffentlicht:
+
+```yaml
+alias: Klingel erkannt
+triggers:
+  - trigger: event
+    event_type: lilygo_t_embed_event
+    event_data:
+      device_id: DEINE_HA_GERAETE_ID
+      event_type: remote_pressed
+      kind: rf
+      slot: 2
+actions:
+  - action: persistent_notification.create
+    data:
+      message: Die angelernte Klingel wurde empfangen.
+```
+
+Eingaben heißen `encoder_left`, `encoder_right`, `encoder_click`, `encoder_hold`,
+`side_click`, `side_hold`. Weitere Ereignisse sind `learned`, `ir_learned`,
+`received`, `ir_received`, `nrf_received`, `tag_scanned`, `result`, `scan_finished`
+und `nrf_energy_scan`. Letzteres enthält `active_channels`. NFC-UIDs werden
+zusätzlich der eingebauten HA-Tag-Integration gemeldet; sichtbar unter
+**Einstellungen → Tags**. Keine retained Ereignisse werden erneut ausgelöst.
+
+## Befehlsbestätigungen und Diagnose
+
+Jeder Befehl nutzt die aktuelle MQTT-Session und eine zufällige `request_id`.
+Gesendet wird mit QoS 0 und `retain: false`. Es gibt keine automatische
+Wiederholung oder Sendewarteschlange. Ein weiterer gleichzeitiger Befehl wird
+abgelehnt. Bei fehlender Bestätigung nach acht Sekunden ist das Ergebnis
+unbekannt; keine Wiederholung erfolgt. Vor einer weiteren Aktion muss wieder
+ein aktueller Status eintreffen. `status` und `list` liefern Daten statt einer
+separaten Ergebnisbestätigung.
+
+Diagnose-Downloads enthalten eine Positivliste technischer Zustände. Sie
+enthalten keine Broker-Zugangsdaten, Sessions, MQTT-Topicnamen, Fernbedienungs-
+Codes, Pulsfolgen, NFC-UIDs oder nRF24-Nutzdaten. Automationsereignisse können
+UIDs bzw. nRF24-Nutzdaten enthalten und werden entsprechend von HA verarbeitet.
+
+## Über HACS installieren
+
+Bei öffentlichem Repository:
+
+1. In HACS das Menü für **Benutzerdefinierte Repositories** öffnen.
+2. `https://github.com/kasi09/Lilygo_CC1101_Plus` eintragen und Typ
+   **Integration** auswählen.
+3. **LILYGO T-Embed CC1101 Plus** herunterladen und Home Assistant neu starten.
+4. Die Integration unter **Einstellungen → Geräte & Dienste** hinzufügen.
+
+Die Komponente wird als benutzerdefiniertes Repository installiert. Sie ist
+nicht in den allgemeinen HACS-Katalog aufgenommen. Dessen Veröffentlichungs-
+und Branding-Anforderungen gelten zusätzlich für eine spätere Katalogaufnahme.
+Bei einem privaten Repository die oben beschriebene manuelle Installation nutzen.
+
+## Paket und Repository-Metadaten
+
+Das Manifest enthält die Dokumentations- und Issue-Links des Repositorys und
+`@kasi09` als Codeowner. Ein Installations-ZIP bauen:
+
+```powershell
+python tools/package_hacs.py
+```
+
+Für einen Fork lassen sich die Metadaten auf ein anderes Repository anpassen:
+
+```powershell
+python tools/package_hacs.py --repository https://github.com/DEIN_NAME/DEIN_REPO --owner "@DEIN_NAME"
+```
+
+Das Werkzeug passt nur lokale Dateien an und baut das ZIP neu. Es legt weder
+ein Repository an noch lädt es Daten hoch.
+
+Offizielle Grundlagen: [HACS-Struktur und Manifest](https://www.hacs.dev/docs/publish/integration/),
+[Home Assistant MQTT](https://www.home-assistant.io/integrations/mqtt/).
+
+## Entwicklung und Prüfumfang
+
+Python 3.14.2 oder neuer verwenden. Auf Linux:
+
+```sh
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements-test.txt
+.venv/bin/python -m pytest
+.venv/bin/python -m ruff check custom_components tests tools/package_hacs.py
+python tools/package_hacs.py
+```
+
+Protokolltests benötigen nur pytest und pytest-asyncio und laufen auch unter
+Windows. Home Assistant wird unter Windows nicht als Produktivsystem betrieben.
+Tests mit simuliertem MQTT-Verkehr prüfen die Python-Anbindung; ein echter
+HAOS-/Broker-/Funk-End-to-End-Test bleibt separat erforderlich.
+
+Lokaler Prüfstand vom **20.10.2026**: **57 pytest-Prüfungen erfolgreich**, mit
+Home-Assistant-Klassen aus 2026.10.0 und Python 3.14.6. Geprüft wurden unter
+anderem 74 Entitäten, Aktionen, Konfigurationsdialog, doppelte Topics, NFC-
+Weiterleitung, Abmelden der MQTT-Callbacks, Statusablauf, Sessionwechsel,
+Zeitüberschreitungen, Codeplatz-Updates und Inhalt des Installationsarchivs.
+MQTT und die Weiterleitung des Plattform-Setups werden in diesen Tests simuliert.
+Zusätzlich bestanden die sechs bestehenden USB-Werkzeugtests und Ruff.
+Die einzige pytest-Warnung stammt aus der HTTP-Klasse von Home Assistant.
+Firmware 0.4.0 wurde mit den bisherigen 54 Compilerprüfungen gebaut; sie ist
+noch nicht geflasht, da bei der Portabfrage kein USB-Gerät erkannt wurde.
