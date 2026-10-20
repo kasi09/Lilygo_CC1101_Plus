@@ -10,8 +10,58 @@ und einen MQTT-Broker. Die eigene Home-Assistant-Komponente liegt unter
 Quellcode: [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_Plus).
 Ein lokales Installations-ZIP lässt sich mit `python tools/package_hacs.py` bauen.
 Benötigt Home Assistant ab 2026.10.0 und Firmware ab 0.4.0 mit
-`GW_MQTT_DISCOVERY false`. Der Firmwarestand 0.4.0 ist gebaut; auf dem Gerät
-befindet sich weiterhin die zuvor geflashte 0.3.1, ohne WLAN-/MQTT-Zugangsdaten.
+`GW_MQTT_DISCOVERY false` bzw. die Portal-Auswahl **Eigene Integration (HACS)**.
+Firmware **0.5.0** ergänzt einen Einrichtungs-Hotspot für WLAN und MQTT.
+Sie wurde am 20.10.2026 erfolgreich gebaut und auf COM4 geflasht.
+Die bisherigen 54 Compilerprüfungen und 20 neue Netzwerkprüfungen liefen mit durch.
+
+## WLAN und MQTT ohne erneutes Kompilieren einrichten
+
+1. Die Firmware einmal auf den LilyGO flashen. Ohne gespeicherte WLAN-Daten
+   startet sofort ein geschützter Hotspot **LilyGO-Setup-…**.
+2. Hotspot-Name und zufälliges Passwort stehen auf der Displayseite
+   **WLAN / MQTT einrichten**. Mit Handy oder Laptop verbinden und die Verbindung
+   trotz Hinweis auf fehlenden Internetzugang beibehalten.
+3. Die Einrichtungsseite öffnet sich häufig automatisch. Sonst im Browser
+   **http://192.168.4.1/** öffnen.
+4. WLAN-Name, WLAN-Passwort sowie MQTT-Broker, Port und Zugangsdaten eintragen.
+   Für die eigene HACS-Komponente **Eigene Integration (HACS)** auswählen.
+5. **Speichern und verbinden** drücken. Die Daten werden auf dem LilyGO in NVS
+   gespeichert. Sobald WLAN und gegebenenfalls MQTT funktionieren, schließt der
+   Hotspot nach zehn Sekunden. Bei einem Fehler bleibt er für Korrekturen offen.
+
+Bei einem WLAN-Ausfall öffnet sich der Hotspot nach **30 Sekunden** erneut.
+Er kann auf der Displayseite **WLAN / MQTT einrichten** auch manuell gestartet
+werden. Ein Klick bei geöffnetem Hotspot schließt ihn; dadurch bleibt er bei
+weiterhin fehlendem WLAN für den Rest dieses Starts geschlossen. Nach einer
+erfolgreichen WLAN-Verbindung ist die automatische Wiederherstellung wieder aktiv.
+Das Hotspot-Passwort wird bei jedem erneuten Öffnen neu erzeugt.
+
+In **Weitere Einstellungen** lassen sich eine eindeutige Geräte-ID und die
+Home-Assistant-Anbindung wählen. Das Basistopic lautet `lilygo/GERÄTE-ID`,
+standardmäßig `lilygo/lilygo_rf`. Eine geänderte Geräte-ID erfordert ein passendes
+Basistopic in Home Assistant. Ein leerer Broker schaltet MQTT aus.
+
+Passwortfelder bleiben beim Laden der Seite leer. Bei unverändertem WLAN bzw.
+Broker und MQTT-Benutzer bedeutet ein leeres Passwortfeld **beibehalten**.
+Offenes WLAN und das Löschen eines MQTT-Passworts werden ausdrücklich ausgewählt.
+Gespeicherte Einstellungen haben Vorrang vor `include/config.local.h`.
+Die Einrichtungsseite ist ausschließlich an der Hotspot-IP erreichbar und wird
+nach dem Schließen beendet. WLAN-/MQTT-Passwörter erscheinen weder in Status,
+MQTT, SD-Codesicherung noch im Repository. Sie liegen im NVS-Gerätespeicher.
+Während Funklernen und Scans pausiert die Bearbeitung von Einrichtungsanfragen;
+beim normalen Portalbetrieb können HTTP-Anfragen den Funkempfang kurz verzögern.
+
+Der Hotspot kann außerdem über USB geöffnet oder geschlossen werden:
+
+```powershell
+python tools/gateway.py --port COM4 --seconds 2 network-setup
+python tools/gateway.py --port COM4 --seconds 2 network-setup --state off
+```
+
+`setup-info` zeigt auf ausdrückliche lokale USB-Anfrage die temporären Hotspot-
+Zugangsdaten. Gespeicherte Heim-WLAN-/MQTT-Passwörter werden dabei nicht ausgegeben.
+Diese USB-Ausgabe nicht veröffentlichen.
 
 **Hardwareteststand: Version 0.3.1, Prototyp.** Die Firmware integriert die praktisch nutzbaren
 Boardfunktionen in ein gemeinsames Home-Assistant-Gerät. Beim Kompilieren werden
@@ -44,8 +94,8 @@ weiterhin praktisch zu prüfen. Zugangsdaten sind noch nicht eingerichtet.
 - RSSI-Scans: 433 MHz, 868 MHz oder nacheinander alle drei CC1101-Bereiche.
 - MQTT Discovery: Diagnose-Sensoren, Scan-/Stop-Tasten, Sendetaste je Code und
   Geräteauslöser für wiedererkannte RC-Codes.
-- Acht Displayseiten für Empfang, Codes, Lernen, Scanner, Eingänge, Infrarot,
-  Bedienung und Gerätewerte, mit
+- Neun Displayseiten für Empfang, Codes, Lernen, Scanner, Eingänge, Infrarot,
+  Bedienung, Gerätewerte und WLAN-/MQTT-Einrichtung, mit
   gepufferter Darstellung, Lern-Countdown und Scan-Pegelgrafik.
 - Akku-Prozent, Spannung, Strom und eindeutig benannte interne BQ27220-
   Chiptemperatur auf dem Display und über MQTT Discovery. Auslesen ohne
@@ -90,8 +140,9 @@ RC-Codes werden zu einem Ereignis zusammengefasst (500 ms Pause bis zum nächste
 ## Einrichten und bauen
 
 1. Diesen Ordner mit VS Code und PlatformIO öffnen oder die PlatformIO-CLI benutzen.
-2. `include/config.example.h` nach `include/config.local.h` kopieren.
-3. WLAN, MQTT-Broker und eine eindeutige `GW_DEVICE_ID` eintragen.
+2. Optional `include/config.example.h` nach `include/config.local.h` kopieren.
+3. WLAN und MQTT können nach dem Flashen über den Hotspot eingerichtet werden.
+   Alternativ Zugangsdaten und eine eindeutige `GW_DEVICE_ID` lokal eintragen.
    Die Broker-Adresse ist die im LAN erreichbare IP bzw. der DNS-Name des
    HAOS-Rechners, nicht der interne Containername `core-mosquitto`.
 4. Bauen:
@@ -101,7 +152,9 @@ python -m platformio run
 ```
 
 Die leere Beispielkonfiguration baut ebenfalls; ohne lokale Konfiguration
-bleiben WLAN und MQTT aus. `config.local.h` wird von Git ignoriert. Zugangsdaten
+startet der Einrichtungs-Hotspot; MQTT bleibt bis zur Einrichtung aus.
+Mit `GW_SETUP_AP_ENABLED false` lässt sich der Hotspot beim Bauen abschalten.
+`config.local.h` wird von Git ignoriert. Zugangsdaten
 sind nach dem Kompilieren allerdings im Firmware-Abbild enthalten. Keine
 Zugangsdaten oder Firmware mit echten Zugangsdaten veröffentlichen.
 

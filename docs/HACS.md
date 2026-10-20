@@ -26,10 +26,28 @@ Installation über HACS muss das Repository öffentlich zugänglich sein;
 private Repositories werden von HACS nicht unterstützt. Ein lokales ZIP kann
 dort nicht als Repository hinzugefügt werden.
 
-## Firmware vorbereiten
+## WLAN und MQTT über den Hotspot einrichten
 
-Die zuvor geflashte Firmware 0.3.1 bleibt auf dem Gerät, bis erneut geflasht wird.
-Für diese Komponente die mitgelieferte **0.4.0** verwenden:
+Ab Firmware **0.5.0** werden Zugangsdaten bequem im Browser eingegeben:
+
+1. Ohne gespeichertes WLAN startet **LilyGO-Setup-…** sofort, bei einem
+   WLAN-Ausfall nach 30 Sekunden. Das zufällige Passwort steht auf dem Display.
+2. Mit diesem Hotspot verbinden und **http://192.168.4.1/** öffnen.
+3. Ein 2,4-GHz-WLAN und den MQTT-Broker konfigurieren. Für diese Komponente unter
+   **Weitere Einstellungen** die Anbindung **Eigene Integration (HACS)** wählen.
+4. Speichern. Bei erfolgreicher Verbindung endet der Hotspot nach zehn Sekunden;
+   bei Fehlern bleibt die Seite für Korrekturen erreichbar.
+
+Die Geräte-ID ist standardmäßig `lilygo_rf`; damit lautet das Basistopic
+`lilygo/lilygo_rf`. Eine im Portal geänderte ID auch in Home Assistant verwenden.
+Gespeicherte Portal-Einstellungen haben Vorrang vor lokalen Build-Vorgaben.
+Das Portal lässt sich über die neue Displayseite auch bei funktionierendem
+WLAN manuell öffnen, beispielsweise zum Korrigieren der MQTT-Anmeldung.
+
+## Alternative: Zugangsdaten beim Bauen vorgeben
+
+Die Komponente unterstützt das Protokoll ab **0.4.0**. Die aktuelle Firmware
+**0.5.0** bietet zusätzlich die Einrichtung im Browser. Bei lokalen Build-Vorgaben:
 
 ```cpp
 // In include/config.local.h zusammen mit den eigenen WLAN-/MQTT-Zugangsdaten:
@@ -39,7 +57,8 @@ Für diese Komponente die mitgelieferte **0.4.0** verwenden:
 
 `config.example.h` setzt Discovery bereits auf `false`. Bestehende lokale
 Konfigurationen ohne diesen Schalter behalten zur Kompatibilität Discovery bei;
-deshalb den Schalter dort ausdrücklich ergänzen. Bauen und flashen wie in der
+deshalb den Schalter dort ausdrücklich ergänzen. Bei bereits gespeicherten
+Portal-Einstellungen dort die gewünschte Anbindung wählen. Bauen und flashen wie in der
 Projekt-README beschrieben. Die Komponente meldet ältere Firmware oder aktive
 Discovery als inkompatibel. Bei Offline-Einrichtung bleiben dann alle Geräte-
 Entitäten nicht verfügbar.
@@ -271,5 +290,7 @@ Zeitüberschreitungen, Codeplatz-Updates und Inhalt des Installationsarchivs.
 MQTT und die Weiterleitung des Plattform-Setups werden in diesen Tests simuliert.
 Zusätzlich bestanden die sechs bestehenden USB-Werkzeugtests und Ruff.
 Die einzige pytest-Warnung stammt aus der HTTP-Klasse von Home Assistant.
-Firmware 0.4.0 wurde mit den bisherigen 54 Compilerprüfungen gebaut; sie ist
-noch nicht geflasht, da bei der Portabfrage kein USB-Gerät erkannt wurde.
+Firmware 0.5.0 wurde mit den bisherigen 54 und 20 neuen Netzwerkprüfungen
+erfolgreich gebaut und am 20.10.2026 auf COM4 geflasht. Sie ergänzt den
+passwortgeschützten Einrichtungs-Hotspot; die Komponente unterstützt weiterhin
+auch Firmware 0.4.0. Der Test mit einem echten HAOS-Broker steht separat aus.

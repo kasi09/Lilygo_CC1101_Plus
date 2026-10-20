@@ -23,7 +23,7 @@ namespace {
 constexpr uint16_t Background = 0x0843, Panel = 0x10C6, Border = 0x294A;
 constexpr uint16_t Ink = 0xEF7D, Muted = 0x94B4, Accent = 0x4DDF;
 constexpr uint16_t Green = 0x4E91, Amber = 0xFD68, Red = 0xF289;
-constexpr const char* PageTitles[] = {"EMPFANG", "GESPEICHERTE CODES", "FERNBEDIENUNG LERNEN", "FUNK-SCANNER", "EINGAENGE", "INFRAROT", "BEDIENUNG", "GERAETEWERTE"};
+constexpr const char* PageTitles[] = {"EMPFANG", "GESPEICHERTE CODES", "FERNBEDIENUNG LERNEN", "FUNK-SCANNER", "EINGAENGE", "INFRAROT", "BEDIENUNG", "GERAETEWERTE", "WLAN / MQTT EINRICHTEN"};
 constexpr const char* Presets[] = {"433 MHz", "868 MHz", "Alle Bereiche"};
 constexpr const char* Controls[] = {"Signalton abspielen", "RGB Ring umschalten", "Mikrofonpegel umschalten",
   "NFC Leser umschalten", "nRF24 Empfang umschalten", "Codes auf SD sichern", "Hardware erneut pruefen"};
@@ -69,9 +69,9 @@ void render(Surface& c, const DisplaySnapshot& s) {
   c.fillScreen(Background);
   c.fillRect(0, 0, 320, 19, Panel);
   text(c, "T-EMBED CC1101 PLUS", 8, 5, Accent, 1, 182);
-  text(c, "WLAN", 219, 5, s.wifi ? Green : Muted, 1, 31);
+  text(c, s.setupActive ? "AP" : "WLAN", 219, 5, s.setupActive ? Amber : s.wifi ? Green : Muted, 1, 31);
   text(c, "MQTT", 274, 5, s.mqtt ? Green : Muted, 1, 31);
-  c.fillCircle(212, 8, 2, s.wifi ? Green : Red);
+  c.fillCircle(212, 8, 2, s.setupActive ? Amber : s.wifi ? Green : Red);
   c.fillCircle(267, 8, 2, s.mqtt ? Green : Red);
   text(c, PageTitles[unsigned(page)], 8, 23, Ink, 2, 266);
   text(c, String(unsigned(page) + 1) + "/" + unsigned(DisplayPage::Count), 288, 28, Muted, 1, 25);
@@ -228,6 +228,24 @@ void render(Surface& c, const DisplaySnapshot& s) {
       text(c, s.board.chargerAvailable ? s.board.usbPower ? s.board.chargeState == 3 ? "USB / Akku voll" :
           s.board.chargeState ? "USB / laedt" : "USB / Ladepause" : "Akkubetrieb" : "Ladestatus --", 172, 123, Muted, 1, 132);
       footer = "Klick: Werte lesen | Seite: weiter";
+      break;
+    }
+    case DisplayPage::Network: {
+      if (s.setupActive) {
+        text(c, "MIT DIESEM HOTSPOT VERBINDEN", 8, 46, Muted, 1);
+        text(c, s.setupSsid, 8, 60, Accent, 2);
+        text(c, "Passwort:", 8, 86, Muted, 1, 77);
+        text(c, s.setupPassword, 91, 81, Ink, 2, 221);
+        text(c, "Browser: http://192.168.4.1", 8, 106, Ink, 1);
+        button(c, "KLICK: HOTSPOT SCHLIESSEN");
+        footer = "Seite: weiter | Hotspot ohne Internet";
+      } else {
+        text(c, s.wifi ? "WLAN verbunden" : "WLAN nicht verbunden", 8, 49, s.wifi ? Green : Amber, 2);
+        text(c, s.networkIp.length() ? String("IP: ") + s.networkIp : "USB und Funk bleiben nutzbar", 8, 74, Ink, 1);
+        text(c, s.mqtt ? "MQTT verbunden" : "WLAN/MQTT hier neu einrichten", 8, 94, Muted, 1);
+        button(c, "DRUECKEN: EINRICHTUNGS-HOTSPOT STARTEN");
+        footer = "Seite: weiter | Zugangsdaten im Browser";
+      }
       break;
     }
     default: break;

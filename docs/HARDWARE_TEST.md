@@ -3,6 +3,40 @@
 Die vollständige Abnahme unten ist **noch offen**. Ein erfolgreicher Build
 bestätigt nur die Übersetzbarkeit des Quellcodes.
 
+## Einrichtungs-Hotspot, Firmware 0.5.0, 20.10.2026
+
+Firmware 0.5.0 wurde erfolgreich gebaut und auf COM4 geflasht. Esptool bestätigte
+die übertragenen Daten per Hash und startete die Anwendung per Watchdog.
+Statischer RAM: 64.536 Bytes; Anwendung: 1.139.505 Bytes; Firmware-Abbild:
+1.139.872 Bytes. Die 54 bisherigen und 20 neuen Netzwerk-Compilerprüfungen
+liefen erfolgreich. Die 57 Home-Assistant-Tests und sechs USB-Werkzeugtests
+bestanden ebenfalls; Firmware 0.5.0 wurde als kompatibel geprüft.
+
+Über USB geprüft:
+
+- Start als 0.5.0 mit automatisch aktivem Einrichtungs-Hotspot und verfügbarem
+  NVS-Netzwerkspeicher.
+- Temporäre Hotspot-Zugangsdaten nur auf ausdrückliche lokale USB-Anfrage;
+  Passwortlänge zwölf Zeichen, korrekte Einrichtungs-URL.
+- Schließen beendet die Ausgabe der Zugangsdaten; erneutes Öffnen erzeugt
+  ein neues Passwort. Der Test hinterließ den Hotspot geöffnet.
+- `request_id` wird korrekt bestätigt und nicht in folgende Antworten übernommen.
+- Zehn aufeinanderfolgende Statusabfragen bei aktivem Hotspot: Codespeicher
+  verfügbar, Funkfehler 0, PN532 und Akku-IC erreichbar, Akkuwerte vorhanden,
+  ansteigende Betriebszeit und keine I²C-Zeitüberschreitungen oder Panics.
+  Freier Heap am Ende: 258.716 Bytes.
+- Normale Statusobjekte enthalten keine WLAN-/MQTT-/Hotspot-Passwörter.
+
+Ein WLAN-Scan vom Laptop wurde vom Betriebssystem abgewiesen; deshalb sind
+Funk-Sichtbarkeit, Verbindung eines externen Clients, Captive-Portal-Verhalten
+und das tatsächliche Speichern über HTTP noch mit Handy oder Laptop zu prüfen.
+Es wurden keine echten WLAN-/MQTT-Zugangsdaten angefordert oder protokolliert.
+Ein Betrieb mit echtem HAOS-Broker steht weiterhin separat aus.
+Die HTTP-Einrichtungsseite bindet ausschließlich an die Hotspot-IP; DNS und
+Webserver werden beim Schließen gestoppt. Formulare nutzen einen zufälligen
+Sitzungswert und prüfen den Ursprung. Einzelne HTTP-Anfragen können den normalen
+Funkempfang verzögern; bei Lernen/Scan wird die HTTP-Bearbeitung pausiert.
+
 ## Eigene Home-Assistant-Komponente, 20.10.2026
 
 Custom Component 0.1.0 liegt lokal unter `custom_components/lilygo_t_embed`.

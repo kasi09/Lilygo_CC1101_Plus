@@ -4,7 +4,7 @@
 #include "remote_store.h"
 #include "device_features.h"
 
-enum class DisplayPage : unsigned { Overview, Codes, Learn, Scan, Inputs, Infrared, Controls, Device, Count };
+enum class DisplayPage : unsigned { Overview, Codes, Learn, Scan, Inputs, Infrared, Controls, Device, Network, Count };
 constexpr unsigned DisplayControlCount = 7;
 constexpr unsigned DisplayScanBins = 72;
 struct ScanDisplayData {
@@ -33,6 +33,8 @@ struct DisplaySnapshot {
   FeatureSnapshot features;
   unsigned irSlot = 0, control = 0;
   String notice;
+  bool setupActive = false;
+  String setupSsid, setupPassword, networkIp;
 };
 
 class GatewayDisplay {

@@ -9,6 +9,8 @@
 // Use a unique lowercase ID per board: letters, digits, underscore, hyphen.
 #define GW_DEVICE_ID "lilygo_rf"
 #define GW_DISCOVERY_PREFIX "homeassistant"
+// Start a password-protected setup hotspot without Wi-Fi or after 30 s offline.
+#define GW_SETUP_AP_ENABLED true
 // false: use the custom lilygo_t_embed integration; true: legacy MQTT Discovery.
 #define GW_MQTT_DISCOVERY false
 // Disables CC1101, IR and nRF24 sending when false.

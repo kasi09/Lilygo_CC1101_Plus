@@ -8,6 +8,7 @@
 #include "rf_rules.h"
 #include "board_telemetry.h"
 #include "gateway_display.h"
+#include "network_manager.h"
 
 RemoteStore store;
 RadioGateway rf;
@@ -15,6 +16,7 @@ TFT_eSPI screen;
 GatewayDisplay display(screen);
 BoardTelemetry board;
 DeviceFeatures features(store);
+NetworkManager connectivity;
 ScanDisplayData scanView;
 Remote lastReceivedRecord;
 DisplayPage displayPage = DisplayPage::Overview;
@@ -33,7 +35,7 @@ String baseTopic, mqttSession;
 String commandRequestId;
 String serialLine;
 bool serialOverflow = false, storeReady = false, learning = false, rawLearning = false;
-bool discoveryPending = false, wifiConfigured = false;
+bool discoveryPending = false;
 bool displayDirty = true;
 bool featureStatePending = false;
 unsigned learnSlot = 0, selectedSlot = 0, scanPreset = 0;
@@ -42,7 +44,7 @@ char learnName[33] = {};
 uint32_t learnStarted = 0, rxCount = 0, txCount = 0;
 uint32_t lastRxAt = 0, lastCode = 0, lastProtocol = 0, lastBits = 0;
 float lastRxFrequency = 0;
-uint32_t lastNetworkTry = 0, lastWifiTry = 0, lastStateAt = 0, lastDisplayAt = 0;
+uint32_t lastNetworkTry = 0, lastStateAt = 0, lastDisplayAt = 0;
 uint32_t scanPoints = 0;
 float scanPeak = -127, scanPeakFrequency = 0;
 String notice = "Bereit";
@@ -97,7 +99,12 @@ void state() {
   doc["radio_error"] = rf.error(); doc["uptime_s"] = millis() / 1000;
   doc["wifi_rssi_dbm"] = WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : -127;
   doc["session"] = mqttSession;
-  doc["discovery_enabled"] = bool(GW_MQTT_DISCOVERY);
+  doc["discovery_enabled"] = bool(connectivity.profile().discovery);
+  doc["wifi_connected"] = WiFi.status() == WL_CONNECTED;
+  doc["mqtt_connected"] = mqtt.connected();
+  doc["setup_active"] = connectivity.portalActive();
+  doc["network_config_saved"] = connectivity.saved();
+  doc["network_storage_ok"] = connectivity.storageReady();
   doc["free_heap_bytes"] = ESP.getFreeHeap();
   features.appendState(doc);
   const BoardReadings values = board.readings();
@@ -128,25 +135,25 @@ void state() {
   lastStateAt = millis();
 }
 void device(JsonObject out) {
-  out["identifiers"].to<JsonArray>().add(GW_DEVICE_ID);
+  out["identifiers"].to<JsonArray>().add(connectivity.profile().deviceId);
   out["name"] = Settings::DeviceName;
   out["manufacturer"] = "LILYGO"; out["model"] = "T-Embed CC1101 Plus";
   out["sw_version"] = Settings::Version;
 }
 void discoveryBase(JsonDocument& doc, const String& id, const String& name) {
   doc["name"] = name;
-  doc["unique_id"] = String(GW_DEVICE_ID) + "_" + id;
+  doc["unique_id"] = String(connectivity.profile().deviceId) + "_" + id;
   doc["availability_topic"] = baseTopic + "/availability";
   device(doc["device"].to<JsonObject>());
 }
 void discoveryPublish(const char* component, const String& id, JsonDocument& doc) {
   String payload;
   serializeJson(doc, payload);
-  mqtt.publish((String(GW_DISCOVERY_PREFIX) + "/" + component + "/" + GW_DEVICE_ID +
+  mqtt.publish((String(GW_DISCOVERY_PREFIX) + "/" + component + "/" + connectivity.profile().deviceId +
                 "/" + id + "/config").c_str(), payload.c_str(), true);
 }
 void removeDiscovery(const char* component, const String& id) {
-  mqtt.publish((String(GW_DISCOVERY_PREFIX) + "/" + component + "/" + GW_DEVICE_ID +
+  mqtt.publish((String(GW_DISCOVERY_PREFIX) + "/" + component + "/" + connectivity.profile().deviceId +
                 "/" + id + "/config").c_str(), "", true);
 }
 void discoverButton(const String& id, const String& name, const char* action, int slot = -1) {
@@ -262,7 +269,7 @@ void discoverFeatures() {
     discoverTrigger(input, baseTopic + "/input", input);
 }
 void discovery() {
-  if (!GW_MQTT_DISCOVERY) { discoveryPending = false; state(); return; }
+  if (!connectivity.profile().discovery) { discoveryPending = false; state(); return; }
   struct Sensor { const char* id; const char* name; const char* unit; };
   const Sensor sensors[] = {
     {"frequency_mhz", "Empfangsfrequenz", "MHz"}, {"rssi_dbm", "Funkpegel", "dBm"},
@@ -494,6 +501,33 @@ void parseCommand(const char* payload, size_t size, bool fromMqtt) {
     if (!((*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f'))) validRequestId = false;
   if (!validRequestId) { result("parse", "invalid_request_id"); return; }
   commandRequestId = requestId;
+  const char* action = doc["action"] | "";
+  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info")) {
+    if (fromMqtt) { result(action, "usb_only"); }
+    else if (!strcmp(action, "network_setup")) {
+      const bool busy = learning || features.ir.learning() || rf.mode() == RadioGateway::Mode::Scan;
+      if (!doc["enabled"].isUnbound() && !doc["enabled"].is<bool>()) result(action, "invalid_enabled");
+      else if (busy) result(action, "device_busy");
+      else if (doc["enabled"].is<bool>() && !doc["enabled"].as<bool>()) {
+        connectivity.closePortal(true); result(action);
+      }
+      else {
+        const bool opened = connectivity.openPortal();
+        if (opened) { features.screenOn(true); displayPage = DisplayPage::Network; }
+        result(action, opened ? nullptr : "setup_unavailable");
+      }
+    } else {
+      // Explicit local USB request only; temporary AP password never reaches MQTT/status/logs.
+      JsonDocument info; info["event"] = "setup_info";
+      info["active"] = connectivity.portalActive();
+      if (connectivity.portalActive()) {
+        info["ssid"] = connectivity.portalSsid(); info["password"] = connectivity.portalPassword();
+        info["url"] = "http://192.168.4.1/";
+      }
+      serializeJson(info, Serial); Serial.println();
+    }
+    commandRequestId = ""; return;
+  }
   // A new session on EVERY MQTT reconnect prevents retained old sends from running.
   if (fromMqtt && (!doc["session"].is<const char*>() ||
       mqttSession != doc["session"].as<const char*>())) {
@@ -516,18 +550,13 @@ void mqttMessage(char* topic, byte* payload, unsigned int length) {
   }
 }
 void networkTick() {
-  if (!wifiConfigured) return;
-  if (WiFi.status() != WL_CONNECTED) {
-    if (millis() - lastWifiTry >= 15000) { lastWifiTry = millis(); WiFi.reconnect(); }
-    return;
-  }
-  if (!strlen(GW_MQTT_HOST)) return;
+  if (WiFi.status() != WL_CONNECTED || !connectivity.profile().mqttHost[0]) return;
   if (!mqtt.connected() && millis() - lastNetworkTry >= 5000) {
     lastNetworkTry = millis();
     char token[24]; snprintf(token, sizeof(token), "%08lx%08lx", (unsigned long)esp_random(), (unsigned long)esp_random());
     mqttSession = token;
     const String availability = baseTopic + "/availability";
-    if (mqtt.connect(GW_DEVICE_ID, GW_MQTT_USER, GW_MQTT_PASSWORD,
+    if (mqtt.connect(connectivity.profile().deviceId, connectivity.profile().mqttUser, connectivity.profile().mqttPassword,
                      availability.c_str(), 1, true, "offline")) {
       publish("availability", "online", true);
       mqtt.subscribe((baseTopic + "/command").c_str());
@@ -721,6 +750,13 @@ void inputTick() {
         state();
       }
       break;
+    case DisplayPage::Network:
+      if (encoder.click && connectivity.portalActive()) connectivity.closePortal(true);
+      else if (!connectivity.portalActive()) {
+        connectivity.openPortal();
+        features.screenOn(true);
+      }
+      break;
     case DisplayPage::Infrared:
       doc["action"] = encoder.held ? "ir_learn" : "ir_send"; doc["slot"] = selectedIr;
       if (features.ir.at(selectedIr).name[0]) doc["name"] = features.ir.at(selectedIr).name;
@@ -767,12 +803,17 @@ void displayTick() {
   if (lastReceivedRecord.kind != RemoteKind::Empty) snapshot.lastReceived = &lastReceivedRecord;
   snapshot.scan = &scanView; snapshot.board = board.readings(); snapshot.notice = notice;
   snapshot.features = features.snapshot(selectedIr); snapshot.irSlot = selectedIr; snapshot.control = selectedControl;
+  snapshot.setupActive = connectivity.portalActive();
+  // Password is drawn only on the local setup page, never in a status object.
+  if (snapshot.setupActive && displayPage == DisplayPage::Network) {
+    snapshot.setupSsid = connectivity.portalSsid(); snapshot.setupPassword = connectivity.portalPassword();
+  }
+  snapshot.networkIp = snapshot.wifi ? WiFi.localIP().toString() : "";
   display.draw(snapshot);
 }
 void setup() {
   Serial.begin(115200);
   serialLine.reserve(4096);
-  baseTopic = String("lilygo/") + GW_DEVICE_ID;
   for (int pin : {Pins::EncoderA, Pins::EncoderB, Pins::EncoderKey, Pins::UserKey}) pinMode(pin, INPUT_PULLUP);
   const bool radioReady = rf.begin();
   screen.init(); screen.setRotation(1);
@@ -782,14 +823,15 @@ void setup() {
   previewScan(scanPreset);
   storeReady = store.begin();
   features.begin(featureEvent);
-  mqtt.setServer(GW_MQTT_HOST, GW_MQTT_PORT); mqtt.setCallback(mqttMessage);
+  mqtt.setCallback(mqttMessage);
   mqtt.setBufferSize(6144); mqtt.setSocketTimeout(1); mqtt.setKeepAlive(30);
-  wifiConfigured = strlen(GW_WIFI_SSID) != 0;
-  if (wifiConfigured) {
-    WiFi.mode(WIFI_STA); WiFi.setHostname(GW_DEVICE_ID); WiFi.setSleep(false);
-    WiFi.begin(GW_WIFI_SSID, GW_WIFI_PASSWORD);
-    lastWifiTry = millis();
-  }
+  connectivity.begin([]() {
+    if (mqtt.connected()) publish("availability", "offline", true);
+    mqtt.disconnect();
+  });
+  baseTopic = String("lilygo/") + connectivity.profile().deviceId;
+  mqtt.setServer(connectivity.profile().mqttHost, connectivity.profile().mqttPort);
+  if (connectivity.portalActive()) displayPage = DisplayPage::Network;
   notice = radioReady ? "Bereit - Code anlernen" : String("CC1101 Fehler: ") + rf.error();
   state();
 }
@@ -799,6 +841,18 @@ void loop() {
   radioTick();
   features.tick(learning || rf.mode() == RadioGateway::Mode::Scan);
   if (features.takeChanged()) { displayDirty = true; featureStatePending = true; }
+  const bool networkAllowed = !learning && !features.ir.learning() && rf.mode() != RadioGateway::Mode::Scan;
+  connectivity.tick(networkAllowed, mqtt.connected(), mqtt.state());
+  if (connectivity.takeChanged()) {
+    baseTopic = String("lilygo/") + connectivity.profile().deviceId;
+    mqtt.setServer(connectivity.profile().mqttHost, connectivity.profile().mqttPort);
+    lastNetworkTry = millis() - 5000;
+    displayDirty = true; featureStatePending = true;
+    if (connectivity.portalActive()) {
+      features.screenOn(true); displayPage = DisplayPage::Network;
+      notice = "WLAN/MQTT im Browser einrichten";
+    } else notice = WiFi.status() == WL_CONNECTED ? "WLAN verbunden" : "WLAN offline / USB und Funk weiter nutzbar";
+  }
   // RF capture and scanning take priority over blocking TCP connection attempts.
   if (!learning && !features.ir.learning() && rf.mode() != RadioGateway::Mode::Scan) networkTick();
   else if (mqtt.connected()) mqtt.loop();

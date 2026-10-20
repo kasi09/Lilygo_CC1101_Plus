@@ -51,6 +51,7 @@ def test_invalid_topics(topic):
 def test_valid_topic_and_firmware():
     assert p.base_topic("lilygo/gateway-2") == "lilygo/gateway-2"
     assert p.compatible(STATE)
+    assert p.compatible({**STATE, "version": "0.5.0", "setup_active": False, "wifi_connected": True})
     assert not p.compatible({**STATE, "version": "0.3.1"})
     assert not p.compatible({**STATE, "discovery_enabled": True})
     assert not p.compatible({**STATE, "session": ""})

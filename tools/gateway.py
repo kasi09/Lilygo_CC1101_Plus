@@ -14,8 +14,10 @@ def arguments():
                         help="Listen duration after command; 0 = until Ctrl+C")
     parser.add_argument("--output", type=Path, help="Append received JSON to a JSONL file")
     sub = parser.add_subparsers(dest="action", required=True)
-    for action in ("watch", "status", "list", "stop", "ir-list", "backup", "probe-features", "nrf-scan"):
+    for action in ("watch", "status", "list", "stop", "ir-list", "backup", "probe-features", "nrf-scan", "setup-info"):
         sub.add_parser(action)
+    setup = sub.add_parser("network-setup", help="Open or close the local setup hotspot")
+    setup.add_argument("--state", choices=("on", "off"), default="on")
     learn = sub.add_parser("learn")
     learn.add_argument("--slot", type=int, required=True, choices=range(16))
     learn.add_argument("--kind", choices=("rc", "raw"), default="rc")
@@ -62,6 +64,8 @@ def make_command(args):
         return doc
     if args.action == "feature":
         return {"action": "feature_set", "feature": args.name, "enabled": args.state == "on"}
+    if args.action == "network-setup":
+        return {"action": "network_setup", "enabled": args.state == "on"}
     if args.action == "store":
         doc = json.loads(args.file.read_text(encoding="utf-8"))
         if not isinstance(doc, dict):

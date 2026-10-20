@@ -1,4 +1,33 @@
-# USB- und MQTT-Protokoll v0.4
+# USB- und MQTT-Protokoll v0.5
+
+Firmware 0.5.0 ergänzt einen passwortgeschützten Einrichtungs-Hotspot und
+dauerhafte WLAN-/MQTT-Einstellungen. Neue Statusfelder:
+
+| Feld | Bedeutung |
+| --- | --- |
+| `wifi_connected`, `mqtt_connected` | Aktueller Verbindungszustand |
+| `setup_active` | Einrichtungs-Hotspot geöffnet |
+| `network_config_saved` | Gültiges Netzwerkprofil im NVS gespeichert |
+| `network_storage_ok` | Netzwerk-Einstellungsspeicher verfügbar |
+
+Nur über **lokales USB**, nie über MQTT:
+
+```json
+{"action":"network_setup"}
+{"action":"network_setup","enabled":false}
+{"action":"setup_info"}
+```
+
+`network_setup` öffnet den Hotspot, sofern kein Funk-/IR-Lernen oder Scan läuft.
+Mit `enabled:false` wird er wie per Display geschlossen; `enabled` ist optional
+und muss, falls vorhanden, ein Boolean sein.
+`setup_info` liefert bei aktivem Hotspot einmalig Name, temporäres Hotspot-
+Passwort und URL direkt auf USB. Die Antwort wird nicht über MQTT veröffentlicht.
+Es werden dabei niemals gespeicherte Heim-WLAN- oder MQTT-Passwörter ausgegeben.
+USB-Mitschnitte dieses Befehls enthalten das aktuelle Hotspot-Passwort und
+gehören nicht ins Repository. Normaler `status` enthält keine Zugangsdaten.
+Das WLAN-/MQTT-Profil ist getrennt von Funk-/IR-Codes gespeichert und wird durch
+die JSONL-Codesicherung nicht exportiert.
 
 Ab Firmware 0.4.0 enthält `state` zusätzlich `discovery_enabled` (Boolean).
 `GW_MQTT_DISCOVERY false` schaltet die Veröffentlichung der bisherigen
