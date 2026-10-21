@@ -1,5 +1,7 @@
 """Whitelisted diagnostics without codes, UID, session or broker credentials."""
 
+from .const import VERSION
+
 
 async def async_get_config_entry_diagnostics(hass, entry):
     hub = entry.runtime_data
@@ -26,7 +28,7 @@ async def async_get_config_entry_diagnostics(hass, entry):
         "noise_available",
     )
     return {
-        "integration_version": "0.1.0",
+        "integration_version": VERSION,
         "available": hub.available,
         "state": {key: hub.protocol.state[key] for key in safe_keys if key in hub.protocol.state},
     }

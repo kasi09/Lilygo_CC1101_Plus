@@ -1,5 +1,6 @@
 #include "remote_store.h"
 #include "rf_rules.h"
+#include "persistent_store.h"
 #include <cstring>
 
 bool RemoteStore::valid(const Remote& r) {
@@ -18,15 +19,7 @@ bool RemoteStore::valid(const Remote& r) {
 }
 
 bool RemoteStore::begin() {
-  if (!preferences_.begin("rf-remotes", false)) return false;
-  for (unsigned i = 0; i < Settings::Slots; ++i) {
-    char key[8]; snprintf(key, sizeof(key), "s%u", i);
-    if (preferences_.getBytesLength(key) != sizeof(Remote)) continue;
-    Remote candidate;
-    if (preferences_.getBytes(key, &candidate, sizeof(candidate)) == sizeof(candidate) &&
-        valid(candidate)) remotes_[i] = candidate;
-  }
-  return true;
+  return RemoteStorage::begin(preferences_, "rf-remotes", remotes_, valid);
 }
 bool RemoteStore::save(unsigned slot, const Remote& r) {
   if (slot >= Settings::Slots || !valid(r)) return false;

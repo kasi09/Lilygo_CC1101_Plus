@@ -22,7 +22,7 @@ def build(output: Path) -> Path:
     files = [
         p
         for p in COMPONENT.rglob("*")
-        if p.is_file() and p.suffix in (".py", ".json", ".yaml") and "__pycache__" not in p.parts
+        if p.is_file() and p.suffix in (".py", ".json", ".yaml", ".js", ".css") and "__pycache__" not in p.parts
     ]
     with ZipFile(target, "w", ZIP_DEFLATED) as archive:
         for source in sorted(files):

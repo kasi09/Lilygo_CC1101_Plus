@@ -1,13 +1,13 @@
 # LILYGO T-Embed CC1101 Plus – eigene Home-Assistant-Integration
 
-Lokale Custom Component **0.1.0**, Domain `lilygo_t_embed`, für Home Assistant
+Lokale Custom Component **0.2.0**, Domain `lilygo_t_embed`, für Home Assistant
 **ab 2026.10.0** und Gateway-Firmware **ab 0.4.0**. Die Kommunikation läuft lokal
 über die bereits eingerichtete MQTT-Integration. In Home Assistant werden keine
 zweiten Broker-Zugangsdaten gespeichert.
 
 ## Lokal installieren
 
-1. Das Paket `dist/lilygo_t_embed-0.1.0.zip` entpacken. Den enthaltenen Ordner
+1. Das Paket `dist/lilygo_t_embed-0.2.0.zip` entpacken. Den enthaltenen Ordner
    `custom_components/lilygo_t_embed` nach
    `/config/custom_components/lilygo_t_embed` auf HAOS kopieren. Das Verzeichnis
    darf nicht doppelt verschachtelt sein; dort muss direkt `manifest.json` liegen.
@@ -18,6 +18,37 @@ zweiten Broker-Zugangsdaten gespeichert.
 4. Der Verbindungstest wartet bis zu 25 Sekunden auf einen aktuellen Status.
    Mit **Ohne Verbindungstest vorbereiten** lässt sich das Gerät vorher anlegen;
    seine Entitäten bleiben bis zum Empfang passender Live-Daten nicht verfügbar.
+
+## Eigenes Anlernfenster
+
+Nach dem Update auf **0.2.0** Home Assistant neu starten und das Frontend neu
+laden. Als Administrator erscheint **LILYGO** in der Seitenleiste. Die Seite
+ist außerdem als Konfigurationsoberfläche der Integration registriert. Sie wird
+automatisch eingerichtet; zusätzliche YAML- oder Lovelace-Ressourcen entfallen.
+
+1. **LILYGO** öffnen und das gewünschte Gerät auswählen.
+2. **Fernbedienung anlernen** oder **Anlernen** auf einem freien Platz drücken.
+3. Einen Namen wie **Wohnzimmer EIN** eingeben. Für SEC24 HAF760R2 **Funk RAW**
+   und **433,92 MHz** verwenden. RC und Infrarot stehen ebenfalls zur Auswahl.
+4. **Anlernen starten** drücken und erst bei der Aufforderung die passende Taste
+   der Fernbedienung drücken, bei Bedarf ungefähr zwei Sekunden halten.
+5. Der Countdown zeigt das 15-Sekunden-Fenster. **Gespeichert** erscheint erst
+   nach einem passenden Live-Ereignis vom Lilygo. Bei fehlender Bestätigung
+   wird kein Erfolg angenommen und kein Versuch automatisch wiederholt.
+6. AUS auf einem weiteren Platz separat aufnehmen. Gespeicherte Codes können
+   über **Senden** auf der jeweiligen Karte einmalig übertragen werden.
+
+Neue Aufnahmen wählen zunächst einen freien Platz. Beim erneuten Anlernen
+eines belegten Platzes muss das Ersetzen ausdrücklich bestätigt werden.
+**Abbrechen** beendet eine laufende Aufnahme am Gerät. Funk besitzt 16 Plätze
+von 0 bis 15, Infrarot acht Plätze von 0 bis 7. Offline-Geräte und noch nicht
+geladene Speicherlisten lassen sich nicht versehentlich überschreiben.
+Die Oberfläche passt sich an Smartphone, Desktop und das HA-Farbschema an.
+
+Die Seite verwendet ausschließlich lokale Dateien aus der Komponente und die
+bestehende HA-Verbindung. Ihre Geräteübersicht enthält Namen und technische
+Zustände, keine Funkcodes, Pulsfolgen, MQTT-Sessions oder Zugangsdaten.
+Die bestehenden Aktionen bleiben für Automationen verfügbar.
 
 Der Quellcode liegt unter
 [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_Plus).

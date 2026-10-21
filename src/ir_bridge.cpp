@@ -1,6 +1,7 @@
 #include "ir_bridge.h"
 #include "board_pins.h"
 #include "feature_rules.h"
+#include "persistent_store.h"
 #include <IRutils.h>
 #include <cstring>
 
@@ -28,14 +29,7 @@ bool IrBridge::begin(FeatureEvent event) {
   event_ = event;
   if (!GW_ENABLE_IR) return false;
   sender_.begin();
-  const bool storage = preferences_.begin("ir-remotes", false);
-  if (storage) for (unsigned i = 0; i < Settings::IrSlots; ++i) {
-    char key[8]; snprintf(key, sizeof(key), "s%u", i);
-    IrRemote candidate;
-    if (preferences_.getBytesLength(key) == sizeof(candidate) &&
-        preferences_.getBytes(key, &candidate, sizeof(candidate)) == sizeof(candidate) && valid(candidate))
-      remotes_[i] = candidate;
-  }
+  if (!RemoteStorage::begin(preferences_, "ir-remotes", remotes_, valid)) return false;
   available_ = true;
   receiver_.enableIRIn(); receiverRunning_ = true;
   return true;

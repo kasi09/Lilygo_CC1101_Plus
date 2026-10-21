@@ -4,11 +4,13 @@
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <esp_system.h>
+#include <nvs.h>
 #include "radio_gateway.h"
 #include "rf_rules.h"
 #include "board_telemetry.h"
 #include "gateway_display.h"
 #include "network_manager.h"
+#include "persistent_store.h"
 
 RemoteStore store;
 RadioGateway rf;
@@ -502,8 +504,24 @@ void parseCommand(const char* payload, size_t size, bool fromMqtt) {
   if (!validRequestId) { result("parse", "invalid_request_id"); return; }
   commandRequestId = requestId;
   const char* action = doc["action"] | "";
-  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info") || !strcmp(action, "display_info") || !strcmp(action, "network_info")) {
+  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info") || !strcmp(action, "display_info") || !strcmp(action, "network_info") || !strcmp(action, "storage_info")) {
     if (fromMqtt) { result(action, "usb_only"); }
+    else if (!strcmp(action, "storage_info")) {
+      JsonDocument info; info["event"] = "storage_info";
+      info["rf_ready"] = storeReady; info["saved"] = store.count();
+      for (const char* label : {"nvs", RemoteStorage::Partition}) {
+        JsonObject partition = info[label].to<JsonObject>();
+        nvs_stats_t stats{};
+        const esp_err_t error = nvs_get_stats(label, &stats);
+        partition["ok"] = error == ESP_OK;
+        if (error == ESP_OK) {
+          partition["total_entries"] = stats.total_entries;
+          partition["used_entries"] = stats.used_entries;
+          partition["free_entries"] = stats.free_entries;
+        } else partition["error"] = esp_err_to_name(error);
+      }
+      serializeJson(info, Serial); Serial.println();
+    }
     else if (!strcmp(action, "network_info")) {
       const bool busy = learning || features.ir.learning() || rf.mode() == RadioGateway::Mode::Scan;
       JsonDocument info; auto details = info.to<JsonObject>(); details["event"] = "network_info";
@@ -828,6 +846,8 @@ void displayTick() {
   display.draw(snapshot);
 }
 void setup() {
+  // Native USB otherwise drops bulk JSON imports at its 256-byte default.
+  Serial.setRxBufferSize(8192);
   Serial.begin(115200);
   serialLine.reserve(4096);
   for (int pin : {Pins::EncoderA, Pins::EncoderB, Pins::EncoderKey, Pins::UserKey}) pinMode(pin, INPUT_PULLUP);

@@ -4,8 +4,14 @@ from homeassistant.components import mqtt
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN, PLATFORMS
+from .frontend import async_setup_panel
 from .hub import LilygoHub
 from .services import async_register_services, async_remove_services
+
+
+async def async_setup(hass, config):
+    await async_setup_panel(hass)
+    return True
 
 
 async def async_setup_entry(hass, entry):

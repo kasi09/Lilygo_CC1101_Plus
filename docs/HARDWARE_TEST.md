@@ -3,6 +3,82 @@
 Die vollständige Abnahme unten ist **noch offen**. Ein erfolgreicher Build
 bestätigt nur die Übersetzbarkeit des Quellcodes.
 
+## Eigenes HA-Anlernfenster, Integration 0.2.0
+
+Die automatisch registrierte Seitenleiste **LILYGO** und ihr Anlernfenster
+wurden am 21.10.2026 lokal gegen Home Assistant 2026.10.0 geprüft. Insgesamt
+84 Tests bestanden, darunter 16 echte Chrome-Tests der ausgelieferten
+JavaScript-Datei sowie neun Tests des WLAN-Portals.
+
+Geprüft wurden RAW/RC/IR-Auswahl, freie und belegte Plätze, ausdrückliches
+Ersetzen, Frequenzwechsel vor dem Lernen, Namensgrenzen, Offline-Zustände,
+Abbruch, Fehler und Zeitüberschreitung. Eine Startbestätigung erzeugt keinen
+Erfolgsstatus. Erfolg benötigt das passende Live-Ereignis von Gerät und Slot;
+auch eine Aufnahme vor Rückkehr der Startantwort geht nicht verloren.
+Es gibt keine automatische Befehlswiederholung. Ein Sendeklick sendet einmal.
+Gerätenamen werden als Text behandelt, Eingaben über Statusupdates erhalten
+und Ereignisabonnements beim Verlassen der Seite abgemeldet.
+
+Desktop sowie Smartphone-Breiten von 390 und 320 Pixeln wurden geprüft.
+Dialog und Bedienelemente bleiben im sichtbaren Bereich; Desktop-Formular
+und dunkles Smartphone-Layout wurden zusätzlich visuell kontrolliert.
+Die Browser verwendeten eine simulierte HA-Verbindung und übertrugen keine
+Funkbefehle. Die Installation auf dem HAOS-Server erfolgt über HACS 0.2.0
+mit anschließendem HA-Neustart und Neuladen des Frontends.
+
+## Codespeicher und Partitionswechsel, Firmware 0.5.4
+
+Am 21.10.2026 auf COM4 gebaut, mit verifizierter Prüfsumme geflasht und am
+Gerät geprüft. RAM: 64.760 Byte, Anwendung: 1.176.013 Byte. Vorher wurde eine
+vollständige private 16-MB-Flash-Sicherung erstellt. Die erzeugte binäre
+Partitionstabelle wurde gegen die ursprüngliche Tabelle aus dieser Sicherung
+geprüft; die unten genannten System- und Anwendungsbereiche sind identisch.
+
+- Zwei vorhandene RAW-Aufnahmen wurden vollständig und unverändert übernommen.
+- Alle 16 RF-Plätze und 8 IR-Plätze gleichzeitig belegt und nach einem Neustart
+  identisch ausgelesen. Nur vorher freie Plätze erhielten temporäre Einträge;
+  ein neu angelegter Testeintrag wurde zusätzlich überschrieben.
+- Die 22 temporären Einträge wurden entfernt. Nach einem weiteren Neustart
+  waren die beiden ursprünglichen Aufnahmen unverändert vorhanden.
+- Der neue NVS-Bereich hatte bei voller Belegung noch 1.596 freie Einträge,
+  nach dem Test 1.972. Der ursprüngliche NVS-Bereich blieb bei 480 belegten
+  und 150 freien Verwaltungseinträgen.
+- Große RF- und IR-JSON-Importe wurden als einzelne USB-Schreibvorgänge korrekt
+  verarbeitet. Funk und IR wurden bei den Speichertests nicht gesendet.
+- WLAN, MQTT und gespeichertes Netzwerkprofil waren nach beiden Neustarts
+  verfügbar; CC1101-Fehlercode 0. Alle 57 Integrationstests bestanden.
+
+Bei einem realen 433,92-MHz-Lerntest meldete der bisherige NVS-Bereich nach
+zwei RAW-Aufnahmen `NOT_ENOUGH_SPACE`. Ein unveränderter Codeimport bestätigte
+den Fehler unabhängig vom Funkdecoder. Ein großer USB-JSON-Import wurde mit
+dem bisherigen 256-Byte-Puffer außerdem abgeschnitten; kleine Datenblöcke
+erreichten den Parser vollständig.
+
+`partitions.csv` erhält die bisherigen Adressen und Größen von System-NVS,
+OTA-Verwaltung, beiden Anwendungen und Coredump. Die bisher ungenutzte interne
+SPIFFS-Partition wird um 64 KB verkleinert. Der Bereich `0xfe0000..0xfeffff`
+bildet anschließend die separate NVS-Partition `remotes` für RF und IR.
+Diese Firmware verwendet für Codesicherungen die externe SD-Karte und bindet
+das interne SPIFFS nicht ein.
+
+Vor dem erstmaligen Wechsel eine vollständige lokale Flash-Sicherung anlegen.
+Bei einer bisherigen SPIFFS-Nutzung muss diese zusätzlich vor einer späteren
+Verwendung mit der verkleinerten Partitionsgröße gesichert und neu angelegt
+werden. Enthält der neue Remote-Bereich alte Daten, ist er nach der Sicherung
+einmalig gezielt zu initialisieren, zum Beispiel mit esptool 5:
+
+```powershell
+New-Item -ItemType Directory -Force .local
+python -m esptool --chip esp32s3 --port COM4 --baud 460800 --after watchdog-reset read-flash 0x0 0x1000000 .local/flash-backup.bin
+python -m esptool --chip esp32s3 --port COM4 --baud 460800 --after watchdog-reset erase-region 0xfe0000 0x10000
+python -m platformio run --target upload --upload-port COM4
+```
+
+Die Sicherung enthält private Geräteeinstellungen und Aufnahmen und darf nicht
+veröffentlicht werden. Den Remote-Bereich bei späteren Firmware-Updates nicht
+erneut löschen. Ein normales Upload aktualisiert ihn nicht. Kein `erase-flash`
+ausführen: Damit gingen auch Netzwerkprofil und vorhandene Codes verloren.
+
 ## Leere WLAN-Liste, Firmware 0.5.3, 21.10.2026
 
 Der Benutzer bestätigte erfolgreiche Einrichtung und HA-Verbindung mit 0.5.2,

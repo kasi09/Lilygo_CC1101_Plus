@@ -15,6 +15,8 @@ def test_archive_contains_only_component_and_installation_docs(tmp_path):
         names = archive.namelist()
         assert "custom_components/lilygo_t_embed/manifest.json" in names
         assert "custom_components/lilygo_t_embed/translations/de.json" in names
+        assert "custom_components/lilygo_t_embed/frontend/lilygo-panel.js" in names
+        assert "custom_components/lilygo_t_embed/frontend.py" in names
         assert all(
             name.startswith("custom_components/lilygo_t_embed/")
             or name in ("INSTALLATION.md", "PROTOCOL.md", "LICENSE")

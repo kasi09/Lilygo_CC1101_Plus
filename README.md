@@ -6,7 +6,13 @@ LilyGO; Home Assistant OS bleibt der Server. Die Verbindung erfolgt über WLAN
 und einen MQTT-Broker. Die eigene Home-Assistant-Komponente liegt unter
 `custom_components/lilygo_t_embed`; alternativ bleibt MQTT Discovery verfügbar.
 
-**Neue eigene Integration 0.1.0:** [Installation und Bedienung](docs/HACS.md).
+**Eigene Integration 0.2.0:** [Installation und Bedienung](docs/HACS.md).
+Die neue Seitenleiste **LILYGO** bietet ein eigenes Anlernfenster für Funk und
+Infrarot, freie Speicherplätze, Namen, Frequenz, Countdown und bestätigte
+Ergebnisse. RAW ist für die SEC24 HAF760R2 voreingestellt. Gespeicherte Codes
+können direkt auf dieser Seite gesendet werden. Nach dem HACS-Update Home
+Assistant neu starten und die Seite neu laden. Die Seite ist für Administratoren
+sichtbar und benötigt keine zusätzliche Dashboard-Konfiguration.
 Quellcode: [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_Plus).
 Ein lokales Installations-ZIP lässt sich mit `python tools/package_hacs.py` bauen.
 Benötigt Home Assistant ab 2026.10.0 und Firmware ab 0.4.0 mit
@@ -21,6 +27,13 @@ Prüfergebnisse stehen im [Hardwaretest](docs/HARDWARE_TEST.md).
 0.5.3 wurde am 21.10.2026 auf COM4 geflasht. Echte WLAN-Treffer und die daraus
 erzeugte Geräteseite wurden mit und ohne JavaScript geprüft. WLAN und MQTT
 blieben nach dem Test verbunden; das gespeicherte Profil wurde beibehalten.
+
+Firmware **0.5.4** verwendet zusätzlich eine eigene 64-KB-NVS-Partition für
+Funk- und IR-Codes. Dadurch belegen Aufnahmen keinen weiteren Platz im kleinen
+WLAN-/Einstellungsspeicher. Vorhandene Codes werden einmalig kopiert; die alten
+Einträge und das WLAN-/MQTT-Profil werden dabei nicht verändert.
+Ein größerer USB-Empfangspuffer verhindert abgeschnittene JSON-Codeimporte.
+Hinweise zum erstmaligen Partitionswechsel stehen im [Hardwaretest](docs/HARDWARE_TEST.md).
 
 ## WLAN und MQTT ohne erneutes Kompilieren einrichten
 

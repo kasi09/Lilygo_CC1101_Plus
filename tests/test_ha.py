@@ -3,18 +3,20 @@
 import asyncio
 import importlib
 import json
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, Unauthorized
 
 from custom_components.lilygo_t_embed import binary_sensor, button, event, light, sensor, switch
 from custom_components.lilygo_t_embed.config_flow import LilygoConfigFlow
-from custom_components.lilygo_t_embed.const import DOMAIN
+from custom_components.lilygo_t_embed.const import DOMAIN, VERSION
 from custom_components.lilygo_t_embed.diagnostics import async_get_config_entry_diagnostics
+from custom_components.lilygo_t_embed.frontend import device_overview, websocket_devices
 from custom_components.lilygo_t_embed.hub import LilygoHub
 from custom_components.lilygo_t_embed.services import async_register_services, async_remove_services
 
@@ -176,6 +178,7 @@ async def test_diagnostics_exclude_private_data(device):
         "mqtt_password": "password",
     }
     serialized = json.dumps(await async_get_config_entry_diagnostics(hass, entry))
+    assert json.loads(serialized)["integration_version"] == VERSION
     for secret in (STATE["session"], "private-tag", "secret", "private-code", "password", hub.topic):
         assert secret not in serialized
 
@@ -246,6 +249,51 @@ async def test_entry_platform_setup_and_unload(device, monkeypatch):
     assert await component.async_unload_entry(hass, entry)
     assert not hass.services.has_service(DOMAIN, "learn_code")
     assert not hass.data[DOMAIN]
+
+
+async def test_learning_panel_overview_excludes_codes_and_sessions(device):
+    hass, _, hub, _ = device
+    hub.protocol.receive("state", json.dumps({**STATE, "storage_ok": True, "frequency_mhz": 433.92}))
+    hub.protocol.receive("remotes", json.dumps({"slot": 0, "kind": "raw", "name": "Steckdose EIN",
+        "frequency_mhz": 433.92, "pulse_count": 131, "pulses_us": [283, 1297], "code": "987654321"}))
+    overview = device_overview(hass)
+    assert len(overview) == 1 and overview[0]["available"]
+    assert len(overview[0]["rf"]) == 16 and len(overview[0]["ir"]) == 8
+    assert overview[0]["rf"][0]["name"] == "Steckdose EIN"
+    assert overview[0]["rf"][0]["occupied"]
+    assert not overview[0]["rf_loaded"]
+    output = json.dumps(overview)
+    for private in (STATE["session"], hub.topic, "987654321", "pulses_us"):
+        assert private not in output
+    connection = SimpleNamespace(user=SimpleNamespace(is_admin=True), send_result=MagicMock())
+    websocket_devices(hass, connection, {"id": 12, "type": "lilygo_t_embed/devices"})
+    connection.send_result.assert_called_once_with(12, overview)
+    connection.user.is_admin = False
+    with pytest.raises(Unauthorized):
+        websocket_devices(hass, connection, {"id": 13})
+
+
+async def test_learning_panel_registers_once_and_uses_local_module(monkeypatch):
+    frontend = importlib.import_module("custom_components.lilygo_t_embed.frontend")
+    register = AsyncMock()
+    import homeassistant.components
+    panel_module = SimpleNamespace(async_register_panel=register)
+    monkeypatch.setitem(sys.modules, "homeassistant.components.panel_custom", panel_module)
+    monkeypatch.setattr(homeassistant.components, "panel_custom", panel_module, raising=False)
+    monkeypatch.setattr(frontend.websocket_api, "async_register_command", MagicMock())
+    hass = SimpleNamespace(data={}, http=SimpleNamespace(async_register_static_paths=AsyncMock()))
+    await frontend.async_setup_panel(hass)
+    await frontend.async_setup_panel(hass)
+    register.assert_awaited_once()
+    hass.http.async_register_static_paths.assert_awaited_once()
+    fields = register.await_args.kwargs
+    assert fields["frontend_url_path"] == "lilygo-t-embed"
+    assert fields["require_admin"] is True
+    assert fields["config_panel_domain"] == DOMAIN
+    assert fields["module_url"].startswith("/lilygo_t_embed_static/")
+    assert "v=0.2.0" in fields["module_url"]
+    static = hass.http.async_register_static_paths.await_args.args[0][0]
+    assert (Path(static.path) / "lilygo-panel.js").is_file()
 
 
 @pytest.mark.parametrize(

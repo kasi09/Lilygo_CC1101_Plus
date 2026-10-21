@@ -2,7 +2,7 @@
 
 DOMAIN = "lilygo_t_embed"
 NAME = "LILYGO T-Embed CC1101 Plus"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 MIN_FIRMWARE = (0, 4, 0)
 CONF_BASE_TOPIC = "base_topic"
 CONF_OFFLINE = "offline_setup"

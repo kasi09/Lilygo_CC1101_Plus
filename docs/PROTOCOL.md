@@ -1,5 +1,26 @@
 # USB- und MQTT-Protokoll v0.5
 
+Firmware 0.5.4 speichert RF- und IR-Aufnahmen in der separaten NVS-Partition
+`remotes` (64 KB). Beim ersten Start werden gültige vorhandene Datensätze aus
+den bisherigen Namespaces kopiert. Eine abgeschlossene Migration wird je
+Namespace markiert, damit später gelöschte Codes nicht erneut importiert werden.
+Der ursprüngliche NVS-Bereich einschließlich WLAN-/MQTT-Profil bleibt erhalten.
+Eine fehlgeschlagene Migration wird beim nächsten Start fortgesetzt; es gibt
+kein automatisches Löschen einer defekten oder vollen Partition.
+
+Die lokale USB-Diagnose
+
+```json
+{"action":"storage_info"}
+```
+
+liefert `rf_ready`, die Zahl belegter RF-Slots und für `nvs` sowie `remotes`
+jeweils `ok`, `total_entries`, `used_entries`, `free_entries` oder `error`.
+Sie enthält keine Schlüssel, Zugangsdaten oder Aufnahmen und ist über MQTT
+gesperrt. Diese NVS-Einträge sind Verwaltungseinheiten, keine freien Slots.
+Der native USB-Empfangspuffer beträgt jetzt 8192 Byte; eine einzelne
+JSON-Befehlszeile bleibt auf 4096 Byte begrenzt.
+
 Firmware 0.5.3 bereitet die WLAN-Liste beim Öffnen des Hotspots vor und liefert
 Treffer direkt im HTML. Das Formular sendet die gewählte SSID als
 `network_ssid`; ist diese leer, wird die manuelle Eingabe `ssid` verwendet.
