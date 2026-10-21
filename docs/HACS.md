@@ -289,6 +289,20 @@ Weiterleitung, Abmelden der MQTT-Callbacks, Statusablauf, Sessionwechsel,
 Zeitüberschreitungen, Codeplatz-Updates und Inhalt des Installationsarchivs.
 MQTT und die Weiterleitung des Plattform-Setups werden in diesen Tests simuliert.
 Zusätzlich bestanden die sechs bestehenden USB-Werkzeugtests und Ruff.
+
+Für die optionalen Browser-Regressionsprüfungen des Einrichtungsportals:
+
+```sh
+python -m pip install -r requirements-browser-test.txt
+python -m playwright install chromium
+python -m pytest tests/test_setup_portal_browser.py
+```
+
+Unter Windows verwenden die Tests standardmäßig das installierte Google Chrome
+mit einem getrennten Testprofil. `PORTAL_BROWSER_CHANNEL` kann einen anderen
+installierten Playwright-Browserkanal vorgeben. Die Tests verwenden künstliche
+WLAN-Namen und keine persönlichen Browserdaten. Ohne die optionale Playwright-
+Abhängigkeit wird das Browser-Testmodul übersprungen.
 Die einzige pytest-Warnung stammt aus der HTTP-Klasse von Home Assistant.
 Firmware 0.5.0 wurde mit den bisherigen 54 und 20 neuen Netzwerkprüfungen
 erfolgreich gebaut und am 20.10.2026 auf COM4 geflasht. Sie ergänzt den

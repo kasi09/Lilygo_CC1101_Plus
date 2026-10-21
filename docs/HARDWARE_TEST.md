@@ -3,6 +3,47 @@
 Die vollständige Abnahme unten ist **noch offen**. Ein erfolgreicher Build
 bestätigt nur die Übersetzbarkeit des Quellcodes.
 
+## Sitzungsprüfung und WLAN-Suche, Firmware 0.5.2, 21.10.2026
+
+0.5.2 korrigiert den Zusammenhang zwischen Referrer-Policy und Origin-Prüfung:
+`no-referrer` ließ Browser bei normalen Formular-POSTs `Origin: null` senden,
+während das Portal die eigene HTTP-Origin erwartete. Die neue Richtlinie
+`same-origin` erhält die korrekte Herkunft. Sitzungsschlüssel und Herkunftsprüfung
+bleiben aktiv. Der Fehler ließ sich im Browser mit der bisherigen Richtlinie
+reproduzieren und mit der neuen Richtlinie beseitigen.
+
+Beim Öffnen startet die Seite eine asynchrone Suche nach sichtbaren 2,4-GHz-WLANs.
+Die Liste enthält bis zu 24 unterschiedliche Namen mit Signalstärke und
+Verschlüsselungsstatus, stärkstes Signal zuerst. Auswahl übernimmt den Namen;
+direkte Eingabe und erneute Suche bleiben möglich. Suchergebnisse überschreiben
+keine manuell eingetragenen Namen. Nach dem Speichern startet die Seite keine
+neue Suche während der Profilübernahme.
+
+Browser-Regressionsprüfungen verwenden die tatsächlichen HTML-Fragmente und
+das Script der Firmware mit künstlichen WLAN-Antworten. Sie prüfen den echten
+Browser-Formular-POST, automatische Suche, Auswahl offener und geschützter Netze,
+erneute Suche, beibehaltene manuelle Eingabe, Sonderzeichen als reinen Text,
+Fehlerwiederholung, leere Listen und den Zustand nach dem Speichern.
+Alle sechs Browserprüfungen, die 57 bisherigen Integrationstests, sechs
+USB-Werkzeugtests und Ruff bestanden. Die Browserantworten der WLAN-Suche
+werden dabei simuliert; der Formular-POST stammt aus einem echten Browser.
+
+Die endgültige Fassung wurde erfolgreich gebaut und auf COM4 geflasht.
+Esptool bestätigte den Hash und startete die Anwendung per Watchdog.
+Statischer RAM: 64.728 Bytes; Anwendung: 1.160.617 Bytes;
+Firmware-Abbild: 1.160.976 Bytes. Die 77 bestehenden Compilerprüfungen liefen mit.
+Der anschließende USB-Test bestätigte Firmware 0.5.2, Zeichenfläche und
+Bildpuffer 320×170, rechten Zeichenrand und Status-Textpixel, QR-Decodierung
+mit unabhängigem Decoder und alle 15.129 Pixel der QR-Grafik. Schließen und
+erneutes Öffnen aktualisierten Passwort und QR korrekt. Zehn Statusabfragen
+bestanden mit Funkfehler 0, verfügbarem Codespeicher und Netzwerkspeicher,
+NFC und Akkuwerten, ohne Panics oder I²C-Fehler. Freier Heap: 258.300 Bytes.
+
+Der Laptop erreicht die Hotspot-IP derzeit nicht. Seine WLAN-/VPN-Verbindung
+wurde nicht geändert. Eine vollständige Einrichtung mit tatsächlicher WLAN-Liste
+und gespeicherten Zugangsdaten ist deshalb zusätzlich mit einem verbundenen
+Handy oder Laptop am Gerät zu prüfen.
+
 ## Display und WLAN-QR-Code, Firmware 0.5.1, 20.10.2026
 
 Firmware 0.5.1 wurde erfolgreich gebaut: statischer RAM 64.712 Bytes,

@@ -11,13 +11,14 @@ Quellcode: [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_P
 Ein lokales Installations-ZIP lässt sich mit `python tools/package_hacs.py` bauen.
 Benötigt Home Assistant ab 2026.10.0 und Firmware ab 0.4.0 mit
 `GW_MQTT_DISCOVERY false` bzw. die Portal-Auswahl **Eigene Integration (HACS)**.
-Firmware **0.5.1** ergänzt einen WLAN-QR-Code auf der Einrichtungsseite und
-gleicht Display-Ausrichtung, Zeichenfläche und Bildpuffer an das Plus-Panel an.
-Die Netzwerkfunktionen von 0.5.0 und die eigene Integration bleiben kompatibel.
-0.5.1 wurde am 20.10.2026 auf COM4 geflasht. Der Gerätetest bestätigte die
-vollständige logische Zeichenfläche und decodierte den WLAN-QR-Code erfolgreich.
-Die physische Display-Abnahme ist separat in [Hardwaretest](docs/HARDWARE_TEST.md)
-dokumentiert.
+Firmware **0.5.2** behebt den Sitzungsfehler beim Speichern der Einrichtung.
+Beim Öffnen der Seite startet eine WLAN-Suche; gefundene 2,4-GHz-Netze lassen
+sich mit Signalstärke und Verschlüsselung auswählen. **Erneut nach WLAN suchen**
+aktualisiert die Liste, versteckte WLANs bleiben manuell eintragbar.
+WLAN-QR-Code und Display-Anpassungen aus 0.5.1 bleiben enthalten.
+Prüfergebnisse stehen im [Hardwaretest](docs/HARDWARE_TEST.md).
+0.5.2 wurde am 21.10.2026 erfolgreich gebaut, auf COM4 geflasht und per USB
+auf stabilen Start und weiterhin korrekte Hotspot-QR-Codes geprüft.
 
 ## WLAN und MQTT ohne erneutes Kompilieren einrichten
 
@@ -29,7 +30,8 @@ dokumentiert.
    Internetzugang beibehalten.
 3. Die Einrichtungsseite öffnet sich häufig automatisch. Sonst im Browser
    **http://192.168.4.1/** öffnen.
-4. WLAN-Name, WLAN-Passwort sowie MQTT-Broker, Port und Zugangsdaten eintragen.
+4. Ein gefundenes WLAN auswählen oder dessen Namen direkt eingeben.
+   WLAN-Passwort sowie MQTT-Broker, Port und Zugangsdaten eintragen.
    Für die eigene HACS-Komponente **Eigene Integration (HACS)** auswählen.
 5. **Speichern und verbinden** drücken. Die Daten werden auf dem LilyGO in NVS
    gespeichert. Sobald WLAN und gegebenenfalls MQTT funktionieren, schließt der
@@ -46,6 +48,18 @@ temporären Hotspot-Zugangsdaten; die WLAN-/MQTT-Einstellungen folgen im Browser
 Er wird direkt auf dem Gerät berechnet und enthält keine externen Links.
 Die schwarze Grafik hat drei Pixel pro Modul und einen weißen Rand von vier
 Modulen; Meldungen und Bedienelemente überdecken diesen Rand nicht.
+
+Die WLAN-Suche läuft asynchron. Die Liste zeigt bis zu 24 unterschiedliche
+sichtbare Netze nach Signalstärke; ein WLAN-Name wird nicht automatisch
+überschrieben. Gleiche WLAN-Namen erscheinen einmal. Die Ergebnisse bleiben
+im Einrichtungsportal und werden nicht über MQTT oder in der Codesicherung
+veröffentlicht. Bei fehlgeschlagener Suche ist die manuelle Eingabe weiter möglich.
+
+Bei **„Sitzung ungültig“** mit älterer Firmware: auf 0.5.2 aktualisieren und
+die Seite **http://192.168.4.1/** frisch öffnen. Ältere offene Tabs enthalten
+nach einem Neustart oder erneutem Öffnen des Hotspots einen veralteten
+Sitzungsschlüssel. 0.5.2 korrigiert zusätzlich die Browser-Richtlinie, durch
+die vorher selbst frische Formular-POSTs fälschlich abgewiesen werden konnten.
 
 In **Weitere Einstellungen** lassen sich eine eindeutige Geräte-ID und die
 Home-Assistant-Anbindung wählen. Das Basistopic lautet `lilygo/GERÄTE-ID`,

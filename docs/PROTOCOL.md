@@ -1,5 +1,29 @@
 # USB- und MQTT-Protokoll v0.5
 
+Firmware 0.5.2 korrigiert die Portal-Antwort auf `Referrer-Policy: same-origin`.
+Mit dem vorherigen `no-referrer` setzen Browser bei normalen Formular-POSTs
+`Origin: null`, was die Herkunftsprüfung zurückweist. Der zufällige Formular-
+Sitzungsschlüssel und die Herkunftsprüfung bleiben erforderlich.
+
+WLAN-Suche ausschließlich auf dem geöffneten Einrichtungs-Hotspot:
+
+- `POST /scan` mit URL-kodiertem `token`: startet eine asynchrone Suche oder
+  verwendet eine bereits laufende Suche; Antwort 202 mit `scanning:true`.
+- `GET /networks`: liefert währenddessen `scanning:true`, danach
+  `scanning:false` und `networks` mit bis zu 24 Einträgen aus `ssid`, `rssi`
+  und `secure`. Doppelte Namen werden zusammengefasst, stärkster Eintrag zuerst.
+- Fehler beim Start: 403 bei ungültiger Sitzung, 503 bei momentan nicht
+  möglicher Suche. Abgebrochene oder fehlgeschlagene Suchen melden `scan_failed`.
+
+Die Seite startet die Suche beim Öffnen selbst und bietet eine manuelle
+Wiederholung. Nach dem Speichern wartet sie zunächst auf die Übernahme der
+Einstellungen. Neue Stations-Verbindungsversuche und Profilübernahme warten,
+bis eine bereits laufende WLAN-Suche beendet ist. RF-Lernen und RF-Scans
+behalten Vorrang vor der Bearbeitung von Portal-Anfragen.
+WLAN-Suchergebnisse erscheinen weder im normalen Gerätestatus noch über MQTT.
+
+Grundlage der Browser-Korrektur: [Referrer-Policy und Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy#effect_on_the_origin_header).
+
 Firmware 0.5.1 ergänzt den lokal berechneten WLAN-QR-Code auf dem Display.
 `{"action":"display_info"}` liefert ausschließlich über USB die logische
 Displaygröße, Panelgröße, Rotation, ST7789-Offsets, Puffergröße und

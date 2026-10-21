@@ -38,6 +38,8 @@ private:
   WebServer server_{IPAddress(192, 168, 4, 1), 80};
   std::function<void()> beforeChange_;
   String portalSsid_, portalPassword_, csrf_;
+  String networksJson_;
+  bool scanning_ = false;
   bool storageReady_ = false, saved_ = false, portalActive_ = false;
   bool automatic_ = false, dismissed_ = false, changed_ = false, wasConnected_ = false;
   bool pendingApply_ = false, appliedInPortal_ = false, ready_ = false;
@@ -48,6 +50,9 @@ private:
   void page(const String& message = "", bool error = false);
   void status();
   void save();
+  void startScan();
+  void networks();
+  void scanTick();
   void redirect();
   bool validRequest();
 };
