@@ -502,8 +502,18 @@ void parseCommand(const char* payload, size_t size, bool fromMqtt) {
   if (!validRequestId) { result("parse", "invalid_request_id"); return; }
   commandRequestId = requestId;
   const char* action = doc["action"] | "";
-  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info") || !strcmp(action, "display_info")) {
+  if (!strcmp(action, "network_setup") || !strcmp(action, "setup_info") || !strcmp(action, "display_info") || !strcmp(action, "network_info")) {
     if (fromMqtt) { result(action, "usb_only"); }
+    else if (!strcmp(action, "network_info")) {
+      const bool busy = learning || features.ir.learning() || rf.mode() == RadioGateway::Mode::Scan;
+      JsonDocument info; auto details = info.to<JsonObject>(); details["event"] = "network_info";
+      if (doc["scan"] == true) {
+        const char* error = busy ? "device_busy" : connectivity.requestScan();
+        if (error) details["error"] = error;
+      }
+      connectivity.diagnostics(details, doc["page"] == true, doc["networks"] == true);
+      serializeJson(info, Serial); Serial.println();
+    }
     else if (!strcmp(action, "display_info")) {
       JsonDocument info; auto details = info.to<JsonObject>();
       details["event"] = "display_info"; display.diagnostics(details);

@@ -3,6 +3,37 @@
 Die vollständige Abnahme unten ist **noch offen**. Ein erfolgreicher Build
 bestätigt nur die Übersetzbarkeit des Quellcodes.
 
+## Leere WLAN-Liste, Firmware 0.5.3, 21.10.2026
+
+Der Benutzer bestätigte erfolgreiche Einrichtung und HA-Verbindung mit 0.5.2,
+aber eine bei „WLAN-Suche wird gestartet“ stehenbleibende Liste.
+Eine neue lokale USB-Diagnose erlaubte die Abgrenzung am tatsächlichen Gerät:
+Nach einem einzigen akzeptierten Start meldete die bisherige Abfrage nach
+rund drei Sekunden Fehler -2. Später lagen im WLAN-Treiber elf Treffer vor.
+Die Abfrage hatte den Hintergrund-Scan zu früh als beendet gewertet.
+
+0.5.3 wartet auf das echte Abschluss-Signal. Im erfolgreichen abschließenden
+Lauf wurden nach 7.197 ms zehn Sender und fünf eindeutige sichtbare WLAN-Namen
+ermittelt. Die erzeugte Geräteseite enthielt diese Namen bereits im HTML.
+Die Auswahl war sowohl mit als auch ohne JavaScript möglich; das hängende
+ursprüngliche Platzhalterfeld trat in der Prüfung nicht mehr auf.
+
+Die Browserprüfung las HTML und echte Suchergebnisse vom Gerät über USB und
+vermittelte sie in ein getrenntes Chrome-Testprofil. Sie änderte keine
+Zugangsdaten. Das ist kein direkter HTTP-Test über die WLAN-Verbindung des
+Laptops und ersetzt die Bedienprüfung auf dem ursprünglich betroffenen Handy
+nicht. WLAN-Namen, HTML-Sitzungsschlüssel und andere private Inhalte wurden
+weder ausgegeben noch ins Repository übernommen.
+
+Nach der Prüfung waren WLAN und MQTT verbunden und das gespeicherte Profil
+vorhanden. Der für den Test manuell geöffnete Hotspot wurde wieder geschlossen.
+Neun Browser-Regressionsprüfungen, 57 Integrationstests, sechs USB-Werkzeugtests
+und Ruff bestanden. Die Browserprüfungen decken auch Auswahl ohne JavaScript,
+hängende Anfragen und beibehaltene vorhandene Treffer ab.
+Die endgültige Fassung wurde auf COM4 mit bestätigtem Hash geflasht und per
+Watchdog gestartet. Statischer RAM: 64.760 Bytes; Anwendung: 1.173.497 Bytes;
+Firmware-Abbild: 1.173.856 Bytes. Die 77 Compilerprüfungen liefen erfolgreich.
+
 ## Sitzungsprüfung und WLAN-Suche, Firmware 0.5.2, 21.10.2026
 
 0.5.2 korrigiert den Zusammenhang zwischen Referrer-Policy und Origin-Prüfung:

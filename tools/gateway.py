@@ -18,6 +18,8 @@ def arguments():
         sub.add_parser(action)
     setup = sub.add_parser("network-setup", help="Open or close the local setup hotspot")
     setup.add_argument("--state", choices=("on", "off"), default="on")
+    info = sub.add_parser("network-info", help="Read local Wi-Fi scan diagnostics without credentials")
+    info.add_argument("--scan", action="store_true", help="Request a Wi-Fi scan while the setup hotspot is open")
     learn = sub.add_parser("learn")
     learn.add_argument("--slot", type=int, required=True, choices=range(16))
     learn.add_argument("--kind", choices=("rc", "raw"), default="rc")
@@ -66,6 +68,8 @@ def make_command(args):
         return {"action": "feature_set", "feature": args.name, "enabled": args.state == "on"}
     if args.action == "network-setup":
         return {"action": "network_setup", "enabled": args.state == "on"}
+    if args.action == "network-info":
+        return {"action": "network_info", "scan": args.scan}
     if args.action == "store":
         doc = json.loads(args.file.read_text(encoding="utf-8"))
         if not isinstance(doc, dict):

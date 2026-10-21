@@ -11,14 +11,16 @@ Quellcode: [kasi09/Lilygo_CC1101_Plus](https://github.com/kasi09/Lilygo_CC1101_P
 Ein lokales Installations-ZIP lässt sich mit `python tools/package_hacs.py` bauen.
 Benötigt Home Assistant ab 2026.10.0 und Firmware ab 0.4.0 mit
 `GW_MQTT_DISCOVERY false` bzw. die Portal-Auswahl **Eigene Integration (HACS)**.
-Firmware **0.5.2** behebt den Sitzungsfehler beim Speichern der Einrichtung.
-Beim Öffnen der Seite startet eine WLAN-Suche; gefundene 2,4-GHz-Netze lassen
-sich mit Signalstärke und Verschlüsselung auswählen. **Erneut nach WLAN suchen**
-aktualisiert die Liste, versteckte WLANs bleiben manuell eintragbar.
+Firmware **0.5.3** behebt den vorzeitigen Abbruch der WLAN-Suche bei bestehender
+WLAN-Verbindung. Die Suche startet bereits beim Öffnen des Hotspots. Gefundene
+2,4-GHz-Netze stehen direkt im HTML zur Auswahl, auch ohne JavaScript.
+**Erneut nach WLAN suchen** aktualisiert die Liste; versteckte Netze bleiben
+manuell eintragbar. Der Sitzungsfehler aus 0.5.2 bleibt behoben.
 WLAN-QR-Code und Display-Anpassungen aus 0.5.1 bleiben enthalten.
 Prüfergebnisse stehen im [Hardwaretest](docs/HARDWARE_TEST.md).
-0.5.2 wurde am 21.10.2026 erfolgreich gebaut, auf COM4 geflasht und per USB
-auf stabilen Start und weiterhin korrekte Hotspot-QR-Codes geprüft.
+0.5.3 wurde am 21.10.2026 auf COM4 geflasht. Echte WLAN-Treffer und die daraus
+erzeugte Geräteseite wurden mit und ohne JavaScript geprüft. WLAN und MQTT
+blieben nach dem Test verbunden; das gespeicherte Profil wurde beibehalten.
 
 ## WLAN und MQTT ohne erneutes Kompilieren einrichten
 
@@ -54,8 +56,14 @@ sichtbare Netze nach Signalstärke; ein WLAN-Name wird nicht automatisch
 überschrieben. Gleiche WLAN-Namen erscheinen einmal. Die Ergebnisse bleiben
 im Einrichtungsportal und werden nicht über MQTT oder in der Codesicherung
 veröffentlicht. Bei fehlgeschlagener Suche ist die manuelle Eingabe weiter möglich.
+Eine Suche kann bei bereits verbundenem WLAN mehrere Sekunden dauern. Die
+Firmware wartet auf das tatsächliche Abschluss-Signal und begrenzt den Lauf
+auf 15 Sekunden. Bei vorübergehend beschäftigtem WLAN-Treiber wird der Start
+wiederholt. Vorhandene Treffer bleiben während einer Aktualisierung nutzbar.
+**WLAN-Liste neu laden** ruft die vorbereitete Liste erneut ab. Die Auswahl
+lässt sich auch ohne JavaScript mit dem Formular absenden.
 
-Bei **„Sitzung ungültig“** mit älterer Firmware: auf 0.5.2 aktualisieren und
+Bei **„Sitzung ungültig“** mit älterer Firmware: auf 0.5.3 aktualisieren und
 die Seite **http://192.168.4.1/** frisch öffnen. Ältere offene Tabs enthalten
 nach einem Neustart oder erneutem Öffnen des Hotspots einen veralteten
 Sitzungsschlüssel. 0.5.2 korrigiert zusätzlich die Browser-Richtlinie, durch

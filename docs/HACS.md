@@ -303,6 +303,9 @@ mit einem getrennten Testprofil. `PORTAL_BROWSER_CHANNEL` kann einen anderen
 installierten Playwright-Browserkanal vorgeben. Die Tests verwenden künstliche
 WLAN-Namen und keine persönlichen Browserdaten. Ohne die optionale Playwright-
 Abhängigkeit wird das Browser-Testmodul übersprungen.
+Firmware 0.5.3 wurde zusätzlich am verbundenen Lilygo mit echten WLAN-Treffern
+und der tatsächlich erzeugten HTML-Seite geprüft. Die Standard-USB-Diagnose
+`network-info` zeigt Scan-Zähler und Verbindungsflags ohne Zugangsdaten.
 Die einzige pytest-Warnung stammt aus der HTTP-Klasse von Home Assistant.
 Firmware 0.5.0 wurde mit den bisherigen 54 und 20 neuen Netzwerkprüfungen
 erfolgreich gebaut und am 20.10.2026 auf COM4 geflasht. Sie ergänzt den

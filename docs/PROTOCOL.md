@@ -1,5 +1,45 @@
 # USB- und MQTT-Protokoll v0.5
 
+Firmware 0.5.3 bereitet die WLAN-Liste beim Öffnen des Hotspots vor und liefert
+Treffer direkt im HTML. Das Formular sendet die gewählte SSID als
+`network_ssid`; ist diese leer, wird die manuelle Eingabe `ssid` verwendet.
+Damit funktioniert Auswahl und Speichern auch ohne JavaScript.
+
+In Arduino-ESP32 2.0.17 besitzt `scanComplete()` ein Zeitlimit von
+`max_ms_per_chan * 20`, bei der verwendeten Kanalzeit also drei Sekunden.
+Der reale Hintergrund-Scan bei verbundener Station benötigte im Gerätetest
+rund sieben Sekunden. Die Firmware wartet jetzt zunächst auf `WIFI_SCAN_DONE_BIT`
+und liest erst dann das Ergebnis. Nach 15 Sekunden ohne Abschluss wird der
+Treiber-Scan beendet. Kurzzeitig nicht mögliche Starts werden bis zu viermal
+versucht. Grundlage: [Arduino-ESP32 2.0.17 WiFiScan](https://github.com/espressif/arduino-esp32/blob/2.0.17/libraries/WiFi/src/WiFiScan.cpp).
+
+`GET /networks` kann auch während einer Aktualisierung die bisherige Liste
+enthalten. `phase:retrying` kennzeichnet einen erneuten Startversuch.
+Ein endgültiger Startfehler steht als `error:scan_unavailable` in der Antwort.
+Browseranfragen sind einzeln auf 4,5 Sekunden begrenzt; Suchergebnisse werden
+bis zu 25 Sekunden lang abgefragt. Fehler bleiben sichtbar und blockieren die
+manuelle Eingabe nicht.
+
+Nur lokal über USB:
+
+```json
+{"action":"network_info"}
+{"action":"network_info","scan":true}
+```
+
+Die Antwort enthält Verbindungsflags und Scan-Zähler, keine Zugangsdaten.
+`scan_reported` enthält nach Abschluss die Anzahl der Treiber-Treffer,
+`scan_visible` die Zahl unterschiedlicher sichtbarer Namen. Der rohe
+`scan_driver_state` kann nach Freigabe der Treiberliste -2 sein, während
+die vorbereiteten Treffer weiterhin im Portal-Cache liegen.
+`scan:true` fordert im geöffneten Hotspot einen Lauf an; Lernen und RF-Scans
+haben Vorrang. Die Diagnose wird nie über MQTT veröffentlicht.
+`network_info` kann zusätzlich mit `page:true` die tatsächliche HTML-Seite und
+mit `networks:true` die Treffer liefern. Diese ausdrücklichen USB-Exporte
+enthalten private WLAN-Namen bzw. den temporären Formular-Sitzungsschlüssel
+und gehören nicht in öffentliche Logs oder das Repository. Die Standardabfrage
+und `network-info` im USB-Werkzeug exportieren diese Inhalte nicht.
+
 Firmware 0.5.2 korrigiert die Portal-Antwort auf `Referrer-Policy: same-origin`.
 Mit dem vorherigen `no-referrer` setzen Browser bei normalen Formular-POSTs
 `Origin: null`, was die Herkunftsprüfung zurückweist. Der zufällige Formular-

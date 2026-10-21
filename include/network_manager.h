@@ -3,6 +3,7 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 #include <WebServer.h>
+#include <ArduinoJson.h>
 #include <functional>
 
 struct NetworkProfile {
@@ -31,6 +32,8 @@ public:
   const String& portalSsid() const { return portalSsid_; }
   const String& portalPassword() const { return portalPassword_; }
   bool takeChanged();
+  const char* requestScan();
+  void diagnostics(JsonObject output, bool includePage = false, bool includeNetworks = false);
 private:
   NetworkProfile profile_, pending_;
   Preferences preferences_;
@@ -40,6 +43,13 @@ private:
   String portalSsid_, portalPassword_, csrf_;
   String networksJson_;
   bool scanning_ = false;
+  bool scanPending_ = false;
+  unsigned scanAttempts_ = 0;
+  uint32_t scanRetryAt_ = 0;
+  int scanReported_ = -2;
+  unsigned scanVisible_ = 0;
+  uint32_t scanStarted_ = 0;
+  uint32_t scanDriverStarted_ = 0, scanFinished_ = 0;
   bool storageReady_ = false, saved_ = false, portalActive_ = false;
   bool automatic_ = false, dismissed_ = false, changed_ = false, wasConnected_ = false;
   bool pendingApply_ = false, appliedInPortal_ = false, ready_ = false;
@@ -48,11 +58,14 @@ private:
   uint32_t offlineSince_ = 0, lastWifiTry_ = 0, applyAt_ = 0, readyAt_ = 0;
   void connectStation();
   void page(const String& message = "", bool error = false);
+  String renderPage(const String& message = "", bool error = false);
+  String networkOptions() const;
   void status();
   void save();
   void startScan();
   void networks();
-  void scanTick();
+  void scanTick(bool serviceAllowed);
+  String scanPayload() const;
   void redirect();
   bool validRequest();
 };
